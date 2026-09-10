@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BlutAdler</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --purple-light:#c9a6f0;
-    --purple-mid:#7a4fb0;
-    --purple-dark:#221136;
+    --purple-light:#550080;
+    --purple-mid:#48006c;
+    --purple-dark:#3c005a;
     --red-light:#ff8a80;
     --red-dark:#5a0000;
     --panel:rgba(24,12,40,0.55);
@@ -28,7 +28,7 @@
     font-family:'Inter',sans-serif;
     color:var(--text);
     min-height:100vh;
-    background:linear-gradient(150deg, var(--purple-light) 0%, var(--purple-mid) 42%, var(--purple-dark) 100%);
+    background:linear-gradient(150deg, var(--purple-light) 0%, var(--purple-dark) 100%);
     background-attachment:fixed;
     position:relative;
     overflow-x:hidden;
@@ -75,20 +75,24 @@
     border-radius:50%;
     background:linear-gradient(135deg, var(--red-light), var(--red-dark));
     display:flex; align-items:center; justify-content:center;
-    font-family:'Cinzel',serif; font-weight:900; font-size:26px; color:#1a0000;
+    font-family:'Space Grotesk',sans-serif; font-weight:800; font-size:26px; color:#1a0000;
     box-shadow:0 0 0 3px rgba(255,255,255,0.08), 0 10px 30px rgba(122,0,0,0.4);
   }
   .guild-name{
-    font-family:'Cinzel',serif;
-    font-weight:900;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:800;
     font-size:44px;
     letter-spacing:0.5px;
-    background:linear-gradient(135deg, var(--red-light), var(--red-dark));
+    line-height:1.1;
+    margin-bottom:6px;
+  }
+  .guild-name .letter,
+  .nav-brand .letter{
+    background:linear-gradient(180deg, var(--red-light), var(--red-dark));
     -webkit-background-clip:text;
     background-clip:text;
     color:transparent;
-    line-height:1.1;
-    margin-bottom:6px;
+    display:inline-block;
   }
   .guild-tag{
     color:var(--text-dim);
@@ -139,7 +143,7 @@
     box-shadow:0 30px 70px rgba(0,0,0,0.5);
   }
   .modal h2{
-    font-family:'Cinzel',serif;
+    font-family:'Space Grotesk',sans-serif;
     font-size:22px;
     margin-bottom:4px;
     color:#fff;
@@ -206,7 +210,8 @@
     padding:36px 24px;
     display:flex;
     flex-direction:column;
-    border-left:1px solid rgba(255,255,255,0.08);
+    border-right:1px solid rgba(255,255,255,0.08);
+    order:-1;
   }
   .nav-heading{
     font-size:11px;
@@ -217,13 +222,15 @@
     margin-bottom:16px;
   }
   .nav-brand{
-    font-family:'Cinzel',serif;
-    font-weight:900;
+    all:unset;
+    cursor:pointer;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:800;
     font-size:24px;
-    background:linear-gradient(135deg, var(--red-light), var(--red-dark));
-    -webkit-background-clip:text; background-clip:text; color:transparent;
     margin-bottom:4px;
+    display:inline-block;
   }
+  .nav-brand:hover .letter{filter:brightness(1.2);}
   .nav-user{
     font-size:12px; color:var(--text-dim);
     margin-bottom:28px;
@@ -259,7 +266,7 @@
 
   /* ---------- Page header ---------- */
   .page-title{
-    font-family:'Cinzel',serif;
+    font-family:'Space Grotesk',sans-serif;
     font-size:30px;
     font-weight:700;
     margin-bottom:6px;
@@ -275,7 +282,7 @@
     padding:24px;
     margin-bottom:24px;
   }
-  .panel h3{font-family:'Cinzel',serif; font-size:17px; margin-bottom:14px; font-weight:700;}
+  .panel h3{font-family:'Space Grotesk',sans-serif; font-size:17px; margin-bottom:14px; font-weight:700;}
 
   /* ---------- Home ---------- */
   .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; margin-bottom:24px;}
@@ -283,7 +290,7 @@
     background:var(--panel); border:1px solid var(--panel-border); border-radius:14px;
     padding:18px 20px;
   }
-  .stat .num{font-family:'Cinzel',serif; font-size:28px; font-weight:900; background:linear-gradient(135deg, var(--red-light), var(--red-dark)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .stat .num{font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; background:linear-gradient(135deg, var(--red-light), var(--red-dark)); -webkit-background-clip:text; background-clip:text; color:transparent;}
   .stat .label{font-size:12px; color:var(--text-dim); margin-top:2px;}
   .home-hero{
     padding:32px 28px;
@@ -397,7 +404,7 @@
     border:1px solid rgba(255,138,128,0.25);
     border-radius:10px; padding:8px 4px;
   }
-  .event-date .d{font-family:'Cinzel',serif; font-weight:900; font-size:18px;}
+  .event-date .d{font-family:'Space Grotesk',sans-serif; font-weight:800; font-size:18px;}
   .event-date .m{font-size:10px; color:var(--text-dim); text-transform:uppercase;}
   .event-body{flex:1;}
   .event-body h4{font-size:14.5px; margin-bottom:3px;}
@@ -479,7 +486,7 @@
 <div id="login-screen">
   <div class="login-card">
     <div class="crest">BA</div>
-    <div class="guild-name">BlutAdler</div>
+    <div class="guild-name"><span class="letter">B</span><span class="letter">l</span><span class="letter">u</span><span class="letter">t</span><span class="letter">A</span><span class="letter">d</span><span class="letter">l</span><span class="letter">e</span><span class="letter">r</span></div>
     <div class="guild-tag">Gildenportal &mdash; Ehre. Blut. Flügel.</div>
     <button class="discord-btn" id="open-discord-login">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.9-1.52.07.07 0 0 0-.08.04c-.21.38-.45.87-.61 1.26a18.3 18.3 0 0 0-5.48 0 12.6 12.6 0 0 0-.62-1.26.08.08 0 0 0-.08-.04c-1.7.29-3.36.8-4.9 1.52a.07.07 0 0 0-.03.03C.53 8.58-.32 12.65.1 16.67a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6 3.03.08.08 0 0 0 .08-.03c.46-.63.87-1.3 1.23-2a.08.08 0 0 0-.04-.11 13 13 0 0 1-1.87-.9.08.08 0 0 1 0-.13c.13-.09.25-.19.37-.29a.07.07 0 0 1 .08 0c3.93 1.8 8.18 1.8 12.06 0a.07.07 0 0 1 .08 0c.12.1.24.2.37.29a.08.08 0 0 1 0 .13c-.6.35-1.22.65-1.87.9a.08.08 0 0 0-.04.11c.37.7.78 1.37 1.23 2a.08.08 0 0 0 .08.03 19.8 19.8 0 0 0 6.01-3.03.08.08 0 0 0 .03-.06c.5-4.65-.62-8.68-2.6-12.27a.06.06 0 0 0-.03-.03ZM8.02 14.24c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.21 0 2.17 1.1 2.15 2.42 0 1.34-.95 2.42-2.15 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.96-2.42 2.15-2.42 1.21 0 2.17 1.1 2.15 2.42 0 1.34-.94 2.42-2.15 2.42Z"/></svg>
@@ -524,7 +531,7 @@
   <div class="shell">
     <div class="main" id="main"></div>
     <nav class="nav">
-      <div class="nav-brand">BlutAdler</div>
+      <button class="nav-brand" id="nav-brand-home" aria-label="Zur Startseite" title="Zur Startseite"><span class="letter">B</span><span class="letter">l</span><span class="letter">u</span><span class="letter">t</span><span class="letter">A</span><span class="letter">d</span><span class="letter">l</span><span class="letter">e</span><span class="letter">r</span></button>
       <div class="nav-user" id="nav-user"></div>
       <ul class="nav-links" id="nav-links"></ul>
       <button class="logout-btn" id="logout-btn">Abmelden</button>
@@ -686,6 +693,11 @@
     state.currentUser = null;
     appScreen.style.display = "none";
     loginScreen.style.display = "flex";
+  });
+
+  document.getElementById("nav-brand-home").addEventListener("click", ()=>{
+    state.view = "home";
+    render();
   });
 
   function escapeHtml(str){
