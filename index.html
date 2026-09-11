@@ -329,6 +329,10 @@
   .rank-Mitglied{background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid rgba(255,255,255,0.12);}
   .rank-Rekrut{background:rgba(255,255,255,0.04); color:var(--text-dim); border:1px dashed rgba(255,255,255,0.15);}
   .class-badge{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:4px 10px; border-radius:8px; font-size:12.5px; color:var(--text-dim);}
+  .class-badge-btn{all:unset; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:4px 10px; border-radius:8px; font-size:12.5px; color:var(--text-dim); cursor:pointer;}
+  .class-badge-btn:hover{background:rgba(255,255,255,0.12); color:var(--text);}
+  tr.member-row{cursor:pointer;}
+  tr.member-row:hover{background:rgba(255,255,255,0.04);}
   .admin-actions{display:flex; gap:6px; align-items:center; flex-wrap:wrap;}
   .admin-actions select{
     background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
@@ -379,6 +383,20 @@
     padding:3px 8px; border-radius:20px; border:1px dashed rgba(255,255,255,0.2);
   }
   .class-check-row .set-haupt:hover{color:var(--text); border-color:rgba(255,255,255,0.4);}
+  .char-name-input{
+    flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12);
+    border-radius:7px; padding:6px 9px; color:var(--text); font-size:13px; font-family:inherit;
+  }
+  .class-check-row select{
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    color:#fff; font-size:12.5px; border-radius:7px; padding:6px 8px; flex-shrink:0;
+  }
+  .class-chip-remove{
+    all:unset; cursor:pointer; width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    color:var(--text-dim); font-size:13px;
+  }
+  .class-chip-remove:hover{background:rgba(192,57,75,0.3); color:#ff9aa8;}
 
   /* ---------- Class manager ---------- */
   .class-list{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;}
@@ -457,6 +475,51 @@
 
   .panel-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
   .panel-head h3{margin-bottom:0;}
+
+  /* ---------- Character / paperdoll ---------- */
+  .paperdoll{display:flex; gap:22px; justify-content:center; align-items:stretch; flex-wrap:wrap;}
+  .equip-col{display:flex; flex-direction:column; gap:8px; width:230px; flex-shrink:0;}
+  .equip-slot{
+    all:unset; cursor:pointer; box-sizing:border-box;
+    display:flex; align-items:center; gap:10px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px; padding:9px 12px;
+    transition:background 0.15s ease, border-color 0.15s ease;
+  }
+  .equip-slot:hover{background:rgba(255,255,255,0.09); border-color:rgba(255,138,128,0.35);}
+  .equip-slot.filled{border-color:rgba(255,138,128,0.3); background:rgba(255,138,128,0.07);}
+  .equip-icon{font-size:20px; flex-shrink:0; width:26px; text-align:center;}
+  .equip-info{display:flex; flex-direction:column; min-width:0;}
+  .equip-label{font-size:11px; color:var(--text-dim);}
+  .equip-value{font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .equip-slot.filled .equip-value{color:#ffcfc9;}
+  .silhouette{
+    flex-shrink:0; width:170px; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 35%, rgba(255,138,128,0.1), transparent 70%);
+    border-radius:16px;
+    padding:10px;
+  }
+  .silhouette svg{width:100%; height:auto; max-height:100%;}
+  .c-head, .c-body{
+    fill:rgba(255,255,255,0.08);
+    stroke:rgba(255,138,128,0.5);
+    stroke-width:1.5;
+  }
+  .c-limb{
+    fill:rgba(255,255,255,0.06);
+    stroke:rgba(255,138,128,0.4);
+    stroke-width:1.2;
+  }
+  .c-helm{fill:rgba(255,138,128,0.35); stroke:rgba(255,138,128,0.7); stroke-width:1.2;}
+  .c-cloak{fill:rgba(90,0,0,0.35); stroke:rgba(255,138,128,0.3); stroke-width:1;}
+  .c-wing{fill:rgba(255,255,255,0.12); stroke:rgba(255,138,128,0.55); stroke-width:1.2;}
+  .c-weapon{fill:rgba(255,138,128,0.55); stroke:rgba(255,138,128,0.8); stroke-width:1;}
+  .c-weapon-hilt{fill:rgba(90,0,0,0.6); stroke:rgba(255,138,128,0.6); stroke-width:1;}
+  @media (max-width:760px){
+    .paperdoll{flex-direction:column; align-items:center;}
+    .equip-col{width:100%; max-width:340px;}
+    .silhouette{order:-1; width:120px;}
+  }
 
   /* ---------- Responsive ---------- */
   @media (max-width:880px){
@@ -562,7 +625,11 @@
     loaded: false,
     openRowMenu: null,
     openClassModalFor: null,
-    newEventTyp: "Dungeon"
+    newEventTyp: "Dungeon",
+    characterFor: null,
+    openSlotEditor: null,
+    music: null,
+    musicStarted: false
   };
 
   const RANK_LABEL = {Leader:"Leader", CoLeader:"Co-Leader", Offizier:"Offizier", Mitglied:"Mitglied", Rekrut:"Rekrut"};
@@ -577,11 +644,148 @@
   };
   const EVENT_TYPE_ORDER = ["Dungeon","Raid","PvP","Treffen","Sonstiges"];
 
+  const EQUIP_SLOTS = [
+    {key:"helm", label:"Helm", icon:"🪖", side:"left"},
+    {key:"shoulder", label:"Schulterplatten", icon:"🔰", side:"left"},
+    {key:"chest", label:"Brustpanzer", icon:"👕", side:"left"},
+    {key:"gloves", label:"Handschuhe", icon:"🧤", side:"left"},
+    {key:"legs", label:"Beinschutz", icon:"👖", side:"left"},
+    {key:"boots", label:"Stiefel", icon:"👢", side:"left"},
+    {key:"mainhand", label:"Hauptwaffe", icon:"⚔️", side:"left"},
+    {key:"offhand", label:"Nebenhand / Schild", icon:"🛡️", side:"left"},
+    {key:"wings", label:"Flügel", icon:"🪽", side:"right"},
+    {key:"necklace", label:"Kette", icon:"📿", side:"right"},
+    {key:"cloak", label:"Umhang", icon:"🧣", side:"right"},
+    {key:"ring1", label:"Ring (1)", icon:"💍", side:"right"},
+    {key:"ring2", label:"Ring (2)", icon:"💍", side:"right"},
+    {key:"belt", label:"Armreif", icon:"🔗", side:"right"},
+    {key:"earring1", label:"Ohrring (1)", icon:"💎", side:"right"},
+    {key:"earring2", label:"Ohrring (2)", icon:"💎", side:"right"}
+  ];
+
+  // Curated item catalog based on AION 2's official item categories/rarity tiers
+  // (Rüstungs-/Waffentypen & Seltenheitsstufen laut taiwanesischer Item-Datenbank).
+  // Kein vollständiger Live-Abgleich möglich (10.000+ Items im Spiel) - daher
+  // repräsentative Auswahl pro Slot, plus "Eigener Name" für alles Weitere.
+  const ITEM_TIERS = ["Gewöhnlich","Selten","Vermächtnis","Einzigartig","Heldenhaft"];
+  const RAID_PREFIXES = ["Ladra","Draupnir","Fire Temple","Vasharti"];
+  function buildOptions(baseName){
+    const opts = ITEM_TIERS.map(t=>`${baseName} (${t})`);
+    opts.push(`${RAID_PREFIXES[0]}-${baseName} (Heldenhaft)`);
+    opts.push(`${RAID_PREFIXES[1]}-${baseName} (Heldenhaft)`);
+    return opts;
+  }
+  const ITEM_CATALOG = {
+    helm: buildOptions("Helm"),
+    shoulder: buildOptions("Schulterplatten"),
+    chest: buildOptions("Brustpanzer"),
+    gloves: buildOptions("Handschuhe"),
+    legs: buildOptions("Beinschutz"),
+    boots: buildOptions("Stiefel"),
+    cloak: buildOptions("Umhang"),
+    necklace: buildOptions("Kette"),
+    ring1: buildOptions("Ring"),
+    ring2: buildOptions("Ring"),
+    earring1: buildOptions("Ohrring"),
+    earring2: buildOptions("Ohrring"),
+    belt: buildOptions("Armreif"),
+    wings: ["Novizen-Flügel (Gewöhnlich)","Kriegerflügel (Selten)","Erzengelflügel (Vermächtnis)","Draupnir-Flügel (Einzigartig)","Ladra-Flügel (Heldenhaft)"],
+    mainhand: ["Langschwert (Selten)","Großschwert (Vermächtnis)","Dolche (Einzigartig)","Bogen (Heldenhaft)","Zauberbuch (Selten)","Zauberorb (Vermächtnis)","Streitkolben (Gewöhnlich)","Zauberstab (Einzigartig)","Faustwaffen (Heldenhaft)","Ladra-Großschwert (Heldenhaft)"],
+    offhand: ["Schild (Selten)","Zauberorb (Vermächtnis)","Zauberbuch (Einzigartig)","Vambrace (Gewöhnlich)","Draupnir-Schild (Heldenhaft)"]
+  };
+
+  // Grober Charakter-Archetyp je Hauptklasse für die (original gezeichnete) Silhouette
+  const CLASS_ARCHETYPE = {
+    Templer:"tank", Gladiator:"tank", Brawler:"tank",
+    Zauberer:"caster", Geistmeister:"caster", Kleriker:"caster", Kantor:"caster",
+    Assassine:"rogue", Ranger:"rogue"
+  };
+  function archetypeFor(klasse){ return CLASS_ARCHETYPE[klasse] || "rogue"; }
+  function primaryCharacter(m){ return (m.characters && m.characters[0]) || {name:m.name, klasse:"", equipment:{}}; }
+
   function isAdmin(user){
     return user && (user.rank === "Leader" || user.rank === "CoLeader");
   }
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  /* ---------------- Music engine ---------------- */
+  let audioEl = null;
+  let audioCtx = null, masterGain = null, oscillators = [];
+
+  function startMusic(){
+    if(state.musicStarted) return;
+    state.musicStarted = true;
+    if(state.music && state.music.url){
+      try{
+        audioEl = new Audio(state.music.url);
+        audioEl.loop = true;
+        audioEl.volume = (state.music.volume||0)/100;
+        audioEl.play().catch(()=>{});
+      }catch(e){}
+    } else {
+      startAmbientSynth();
+    }
+  }
+
+  function startAmbientSynth(){
+    try{
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = ((state.music && state.music.volume) || 0)/100 * 0.5;
+      masterGain.connect(audioCtx.destination);
+      const freqs = [110, 138.6, 164.8, 220];
+      freqs.forEach((f,i)=>{
+        const osc = audioCtx.createOscillator();
+        osc.type = i % 2 === 0 ? "sine" : "triangle";
+        osc.frequency.value = f;
+        const g = audioCtx.createGain();
+        g.gain.value = 0.22;
+        osc.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        oscillators.push(osc);
+      });
+      const lfo = audioCtx.createOscillator();
+      lfo.frequency.value = 0.05;
+      const lfoGain = audioCtx.createGain();
+      lfoGain.gain.value = 0.03;
+      lfo.connect(lfoGain);
+      lfoGain.connect(masterGain.gain);
+      lfo.start();
+      oscillators.push(lfo);
+    }catch(e){}
+  }
+
+  function stopMusic(){
+    if(audioEl){ try{ audioEl.pause(); }catch(e){} audioEl = null; }
+    if(audioCtx){
+      oscillators.forEach(o=>{ try{ o.stop(); }catch(e){} });
+      oscillators = [];
+      try{ audioCtx.close(); }catch(e){}
+      audioCtx = null; masterGain = null;
+    }
+  }
+
+  function applyVolume(){
+    const vol = ((state.music && state.music.volume) || 0)/100;
+    if(audioEl) audioEl.volume = vol;
+    if(masterGain) masterGain.gain.value = vol * 0.5;
+  }
+
+  async function setMusicVolume(v){
+    state.music.volume = v;
+    applyVolume();
+    await saveMusic();
+  }
+
+  async function setMusicUrl(url){
+    state.music.url = url;
+    await saveMusic();
+    stopMusic();
+    state.musicStarted = false;
+    startMusic();
+  }
 
   /* ---------------- Storage ---------------- */
   async function loadAll(){
@@ -601,6 +805,14 @@
       const t = await window.storage.get("tickets", true);
       state.tickets = t ? JSON.parse(t.value) : null;
     }catch(e){ state.tickets = null; }
+    try{
+      const mu = await window.storage.get("music", true);
+      state.music = mu ? JSON.parse(mu.value) : null;
+    }catch(e){ state.music = null; }
+    if(!state.music){
+      state.music = {url:"", volume:15};
+      await saveMusic();
+    }
 
     if(!state.classes){
       state.classes = ["Templer","Gladiator","Assassine","Ranger","Zauberer","Geistmeister","Kleriker","Kantor"];
@@ -608,21 +820,43 @@
     }
     if(!state.members){
       state.members = [
-        {id:uid(), name:"Ragnar Sturmklinge", rank:"Leader", hauptklasse:"Templer", klassen:["Templer"]},
-        {id:uid(), name:"Elyndra Nachtblut", rank:"CoLeader", hauptklasse:"Zauberer", klassen:["Zauberer","Geistmeister"]},
-        {id:uid(), name:"Torvin Eisenfaust", rank:"Offizier", hauptklasse:"Gladiator", klassen:["Gladiator"]},
-        {id:uid(), name:"Sira Windfeder", rank:"Mitglied", hauptklasse:"Ranger", klassen:["Ranger","Assassine"]},
-        {id:uid(), name:"Dorn Grauwolf", rank:"Rekrut", hauptklasse:"Assassine", klassen:["Assassine"]}
+        {id:uid(), name:"Ragnar Sturmklinge", rank:"Leader", characters:[
+          {id:uid(), name:"Ragnar Sturmklinge", klasse:"Templer", equipment:{}}
+        ]},
+        {id:uid(), name:"Elyndra Nachtblut", rank:"CoLeader", characters:[
+          {id:uid(), name:"Elyndra Nachtblut", klasse:"Zauberer", equipment:{}},
+          {id:uid(), name:"Elyndra Zweitcharakter", klasse:"Geistmeister", equipment:{}}
+        ]},
+        {id:uid(), name:"Torvin Eisenfaust", rank:"Offizier", characters:[
+          {id:uid(), name:"Torvin Eisenfaust", klasse:"Gladiator", equipment:{}}
+        ]},
+        {id:uid(), name:"Sira Windfeder", rank:"Mitglied", characters:[
+          {id:uid(), name:"Sira Windfeder", klasse:"Ranger", equipment:{}},
+          {id:uid(), name:"Sira Schattenklinge", klasse:"Assassine", equipment:{}}
+        ]},
+        {id:uid(), name:"Dorn Grauwolf", rank:"Rekrut", characters:[
+          {id:uid(), name:"Dorn Grauwolf", klasse:"Assassine", equipment:{}}
+        ]}
       ];
       await saveMembers();
     }
-    // Migration: normalize old single-"klasse" members to hauptklasse/klassen model
+    // Migration: convert old hauptklasse/klassen/equipment model to the multi-character model
     let migrated = false;
     state.members.forEach(m=>{
-      if(!m.klassen){
-        m.hauptklasse = m.klasse || (state.classes[0] || "");
-        m.klassen = m.hauptklasse ? [m.hauptklasse] : [];
-        delete m.klasse;
+      if(!m.characters){
+        const oldKlassen = m.klassen || (m.klasse ? [m.klasse] : (state.classes[0] ? [state.classes[0]] : []));
+        const oldHaupt = m.hauptklasse || m.klasse || oldKlassen[0] || "";
+        const oldEquip = m.equipment || {};
+        m.characters = oldKlassen.length ? oldKlassen.map(k=>({
+          id:uid(),
+          name: k===oldHaupt ? m.name : `${m.name} (${k})`,
+          klasse: k,
+          equipment: k===oldHaupt ? oldEquip : {}
+        })) : [{id:uid(), name:m.name, klasse:state.classes[0]||"", equipment:{}}];
+        // Hauptcharakter (= alte Hauptklasse) an erste Stelle
+        const hi = m.characters.findIndex(c=>c.klasse===oldHaupt);
+        if(hi > 0){ const [prim] = m.characters.splice(hi,1); m.characters.unshift(prim); }
+        delete m.klasse; delete m.klassen; delete m.hauptklasse; delete m.equipment;
         migrated = true;
       }
     });
@@ -658,6 +892,7 @@
   async function saveClasses(){ try{ await window.storage.set("classes", JSON.stringify(state.classes), true); }catch(e){} }
   async function saveEvents(){ try{ await window.storage.set("events", JSON.stringify(state.events), true); }catch(e){} }
   async function saveTickets(){ try{ await window.storage.set("tickets", JSON.stringify(state.tickets), true); }catch(e){} }
+  async function saveMusic(){ try{ await window.storage.set("music", JSON.stringify(state.music), true); }catch(e){} }
 
   /* ---------------- Login flow ---------------- */
   const loginScreen = document.getElementById("login-screen");
@@ -680,13 +915,17 @@
 
     let existing = state.members.find(m => m.name.toLowerCase() === name.toLowerCase());
     if(!existing){
-      existing = {id:uid(), name, rank, hauptklasse:klasse, klassen:[klasse]};
+      existing = {id:uid(), name, rank, characters:[{id:uid(), name, klasse, equipment:{}}]};
       state.members.push(existing);
       await saveMembers();
     } else {
       existing.rank = rank;
-      existing.hauptklasse = klasse;
-      if(!existing.klassen.includes(klasse)) existing.klassen.push(klasse);
+      if(!existing.characters) existing.characters = [];
+      if(existing.characters.length){
+        existing.characters[0].klasse = klasse;
+      } else {
+        existing.characters.push({id:uid(), name, klasse, equipment:{}});
+      }
       await saveMembers();
     }
     state.currentUser = existing;
@@ -695,10 +934,13 @@
     appScreen.style.display = "block";
     state.view = "home";
     render();
+    startMusic();
   });
 
   document.getElementById("logout-btn").addEventListener("click", ()=>{
     state.currentUser = null;
+    stopMusic();
+    state.musicStarted = false;
     appScreen.style.display = "none";
     loginScreen.style.display = "flex";
   });
@@ -780,17 +1022,17 @@
     const admin = isAdmin(user);
 
     const rows = state.members.map(m => {
-      const extra = (m.klassen || []).length - 1;
+      const prim = primaryCharacter(m);
+      const extra = (m.characters || []).length - 1;
       const rowMenuOpen = state.openRowMenu === m.id;
       return `
-      <tr>
+      <tr class="member-row" data-id="${m.id}" tabindex="0" title="Klicken für Charakteransicht">
         <td data-label="Member"><span class="member-name">${escapeHtml(m.name)}</span> ${m.id===user.id?'<span class="you">(du)</span>':''}</td>
         <td data-label="Rolle"><span class="badge rank-${m.rank}">${RANK_LABEL[m.rank]}</span></td>
         <td data-label="Klasse">
           <div class="klasse-cell">
-            <span class="class-badge">${escapeHtml(m.hauptklasse || "—")}</span>
+            <button class="class-badge class-badge-btn" data-action="open-char-modal" data-id="${m.id}" title="Charaktere von ${escapeHtml(m.name)} ansehen">${escapeHtml(prim.klasse || "—")}</button>
             ${extra > 0 ? `<span class="klasse-extra">+${extra}</span>` : ""}
-            ${admin ? `<button class="dots-btn" data-action="open-class-modal" data-id="${m.id}" title="Klassen von ${escapeHtml(m.name)} verwalten" aria-label="Klassen von ${escapeHtml(m.name)} verwalten">⋯</button>` : ""}
           </div>
         </td>
         ${admin ? `<td data-label="Admin">
@@ -811,7 +1053,7 @@
 
     return `
       <div class="page-title">Gildenmitglieder</div>
-      <div class="page-sub">${state.members.length} Mitglieder in BlutAdler${admin ? " — über die ⋮-Menüs passt du Rang, Klassen und Mitgliedschaft an." : ""}</div>
+      <div class="page-sub">${state.members.length} Mitglieder in BlutAdler — klicke auf einen Namen für die Charakteransicht, auf die Klasse für die Charakterübersicht.${admin ? " Über ⋮ passt du Rang und Mitgliedschaft an." : ""}</div>
 
       <div class="panel" style="overflow-x:auto;">
         <table>
@@ -827,7 +1069,7 @@
       ${admin ? `
       <div class="panel">
         <h3>Klassen der Gilde verwalten</h3>
-        <div class="page-sub" style="margin-bottom:14px;">Hier legst du fest, welche Klassen es in BlutAdler überhaupt gibt (Standard: die 8 Aion 2-Klassen). Welche davon ein Mitglied spielt, stellst du über die ⋯ hinter der Klasse in der Tabelle ein.</div>
+        <div class="page-sub" style="margin-bottom:14px;">Hier legst du fest, welche Klassen es in BlutAdler überhaupt gibt (Standard: die 8 Aion 2-Klassen). Welche Klasse ein Charakter spielt, stellst du über einen Klick auf die Klasse in der Tabelle ein.</div>
         <div class="class-list" id="class-list">${renderClassChips()}</div>
         <div class="add-class-row">
           <input type="text" id="new-class-input" placeholder="Neue Klasse, z. B. Brawler">
@@ -835,7 +1077,7 @@
         </div>
       </div>` : ""}
 
-      ${admin ? renderClassModal() : ""}
+      ${renderCharacterModal()}
     `;
   }
 
@@ -848,18 +1090,24 @@
     `).join("");
   }
 
-  function renderClassModal(){
+  function renderCharacterModal(){
     if(!state.openClassModalFor) return "";
     const m = state.members.find(x=>x.id===state.openClassModalFor);
     if(!m) return "";
-    const rows = state.classes.map(c=>{
-      const checked = (m.klassen||[]).includes(c);
-      const isHaupt = m.hauptklasse === c;
+    const canManage = isAdmin(state.currentUser) || m.id===state.currentUser.id;
+    const chars = m.characters || [];
+    const rows = chars.map((c,i)=>{
+      const isPrim = i===0;
       return `
         <div class="class-check-row">
-          <input type="checkbox" id="cls-${c}" data-action="toggle-klasse" data-class="${escapeHtml(c)}" ${checked?'checked':''} ${isHaupt?'disabled':''}>
-          <label for="cls-${c}">${escapeHtml(c)}</label>
-          ${isHaupt ? `<span class="haupt-tag">Hauptklasse</span>` : (checked ? `<button class="set-haupt" data-action="set-haupt" data-class="${escapeHtml(c)}">Als Hauptklasse</button>` : "")}
+          ${canManage ? `<input type="text" class="char-name-input" value="${escapeHtml(c.name)}" data-action="rename-char" data-char="${c.id}">` : `<label style="flex:1;">${escapeHtml(c.name)}</label>`}
+          ${canManage ? `
+            <select data-action="set-char-klasse" data-char="${c.id}">
+              ${state.classes.map(k=>`<option value="${escapeHtml(k)}" ${k===c.klasse?'selected':''}>${escapeHtml(k)}</option>`).join("")}
+            </select>
+          ` : `<span class="class-badge">${escapeHtml(c.klasse)}</span>`}
+          ${isPrim ? `<span class="haupt-tag">Hauptcharakter</span>` : (canManage ? `<button class="set-haupt" data-action="set-primary-char" data-char="${c.id}">Als Haupt</button>` : "")}
+          ${canManage && chars.length>1 ? `<button class="class-chip-remove" data-action="remove-char" data-char="${c.id}" title="Charakter entfernen">✕</button>` : ""}
         </div>
       `;
     }).join("");
@@ -867,11 +1115,19 @@
     return `
       <div class="modal-overlay" id="class-modal-overlay">
         <div class="modal">
-          <h2>Klassen von ${escapeHtml(m.name)}</h2>
-          <div class="sub">Wähle, welche Klassen dieses Mitglied spielt. Die Hauptklasse wurde bei der Anmeldung festgelegt.</div>
+          <h2>Charaktere von ${escapeHtml(m.name)}</h2>
+          <div class="sub">${canManage ? "Alle Charaktere dieses Mitglieds. Jeder Charakter hat seine eigene Ausrüstung." : "Diese Charaktere spielt " + escapeHtml(m.name) + "."}</div>
           <div class="class-check-list">${rows}</div>
-          <div class="modal-actions">
-            <button class="btn btn-ghost" id="close-class-modal">Schließen</button>
+          ${canManage ? `
+          <div class="add-class-row" style="margin-top:12px;">
+            <input type="text" id="new-char-name" placeholder="Name des neuen Charakters">
+            <select id="new-char-klasse">
+              ${state.classes.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("")}
+            </select>
+            <button class="btn btn-primary btn-small" id="add-char-btn">+ Hinzufügen</button>
+          </div>` : ""}
+          <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn btn-ghost" id="close-class-modal" style="width:100%;">Schließen</button>
           </div>
         </div>
       </div>
@@ -1007,6 +1263,22 @@
       </div>
 
       <div class="panel">
+        <h3>🎵 Gildenmusik</h3>
+        <p style="color:var(--text-dim); font-size:13px; line-height:1.6; margin-bottom:14px;">
+          Trage optional die URL zu einer MP3-Datei ein (z. B. ein von euch gehosteter, lizenzfreier Track). Ohne URL läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
+        </p>
+        <div class="field">
+          <label for="music-url">Musik-URL (MP3, optional)</label>
+          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${escapeHtml(state.music.url||'')}">
+        </div>
+        <button class="btn btn-ghost btn-small" id="music-url-apply" style="margin-bottom:18px;">Übernehmen</button>
+        <div class="field">
+          <label for="music-volume">Lautstärke (${state.music.volume}%)</label>
+          <input id="music-volume" type="range" min="0" max="100" value="${state.music.volume}">
+        </div>
+      </div>
+
+      <div class="panel">
         <h3>Hinweis</h3>
         <p style="color:var(--text-dim); font-size:13.5px; line-height:1.6;">
           Rang- und Klassenänderungen sowie das Entfernen von Mitgliedern erfolgen im Bereich „Member“.
@@ -1014,6 +1286,249 @@
         </p>
       </div>
     `;
+  }
+
+  function buildCharacterEmblem(c){
+    // Abstract, geometric "Daeva crest" per Archetyp — bewusst kein anatomisches
+    // Charaktermodell, sondern ein eigenständiges, kristallines Wappen-Design,
+    // um keinerlei Ähnlichkeit zu tatsächlicher AION-2-Charakterkunst zu erzeugen.
+    const archetype = archetypeFor(c.klasse);
+    const eq = c.equipment || {};
+    const hasWings = !!eq.wings;
+    const hasWeapon = !!eq.mainhand;
+    const hasHelm = !!eq.helm;
+    const hasCloak = !!eq.cloak;
+
+    const cores = {
+      tank: `<polygon class="c-body" points="50,58 78,80 68,132 32,132 22,80"/>`,
+      caster: `<polygon class="c-body" points="50,58 66,86 58,150 42,150 34,86"/>`,
+      rogue: `<polygon class="c-body" points="50,60 70,78 60,120 40,120 30,78"/>`
+    };
+    const strutsByArche = {
+      tank: `<line class="c-limb" x1="30" y1="90" x2="12" y2="150"/>
+             <line class="c-limb" x1="70" y1="90" x2="88" y2="150"/>
+             <line class="c-limb" x1="40" y1="132" x2="34" y2="196"/>
+             <line class="c-limb" x1="60" y1="132" x2="66" y2="196"/>`,
+      caster: `<line class="c-limb" x1="36" y1="92" x2="22" y2="140"/>
+               <line class="c-limb" x1="64" y1="92" x2="78" y2="140"/>
+               <line class="c-limb" x1="44" y1="150" x2="40" y2="202"/>
+               <line class="c-limb" x1="56" y1="150" x2="60" y2="202"/>`,
+      rogue: `<line class="c-limb" x1="34" y1="86" x2="18" y2="132"/>
+              <line class="c-limb" x1="66" y1="86" x2="82" y2="132"/>
+              <line class="c-limb" x1="42" y1="120" x2="38" y2="192"/>
+              <line class="c-limb" x1="58" y1="120" x2="62" y2="192"/>`
+    };
+    const weaponRunes = {
+      tank: `<rect class="c-weapon" x="82" y="60" width="5" height="72" rx="2"/><polygon class="c-weapon-hilt" points="80,132 90,132 85,144"/>`,
+      caster: `<rect class="c-weapon" x="10" y="46" width="4" height="100" rx="2"/><polygon class="c-weapon-hilt" points="6,44 18,44 12,32"/>`,
+      rogue: `<rect class="c-weapon" x="14" y="88" width="4" height="30" rx="2" transform="rotate(-20 14 88)"/><rect class="c-weapon" x="82" y="88" width="4" height="30" rx="2" transform="rotate(20 82 88)"/>`
+    };
+    const wings = `<polygon class="c-wing" points="38,66 4,54 2,88 24,82"/><polygon class="c-wing" points="62,66 96,54 98,88 76,82"/>`;
+    const cloak = `<polygon class="c-cloak" points="34,72 66,72 76,168 50,180 24,168"/>`;
+    const helm = `<polygon class="c-helm" points="38,20 62,20 58,34 42,34"/>`;
+
+    return `
+      <svg viewBox="0 0 100 220" xmlns="http://www.w3.org/2000/svg">
+        ${hasWings ? wings : ""}
+        ${hasCloak ? cloak : ""}
+        <polygon class="c-head" points="50,14 62,24 58,38 42,38 38,24"/>
+        ${hasHelm ? helm : ""}
+        ${cores[archetype]}
+        ${strutsByArche[archetype]}
+        ${hasWeapon ? weaponRunes[archetype] : ""}
+      </svg>
+    `;
+  }
+
+  function renderCharacter(){
+    const m = state.members.find(x=>x.id===state.characterFor);
+    if(!m){
+      return `<div class="page-title">Mitglied nicht gefunden</div><button class="btn btn-ghost" id="back-to-member">Zurück zu Mitgliedern</button>`;
+    }
+    const chars = m.characters || [];
+    if(!state.activeCharId || !chars.find(c=>c.id===state.activeCharId)){
+      state.activeCharId = chars[0] ? chars[0].id : null;
+    }
+    const c = chars.find(x=>x.id===state.activeCharId) || {name:"—", klasse:"", equipment:{}};
+    const canManage = isAdmin(state.currentUser) || m.id===state.currentUser.id;
+
+    const left = EQUIP_SLOTS.filter(s=>s.side==="left");
+    const right = EQUIP_SLOTS.filter(s=>s.side==="right");
+
+    function slotBtn(s){
+      const val = (c.equipment||{})[s.key] || "";
+      return `
+        <button class="equip-slot ${val ? 'filled':''}" data-action="edit-slot" data-slot="${s.key}" title="${s.label}">
+          <span class="equip-icon">${s.icon}</span>
+          <span class="equip-info">
+            <span class="equip-label">${s.label}</span>
+            <span class="equip-value">${val ? escapeHtml(val) : '– leer –'}</span>
+          </span>
+        </button>
+      `;
+    }
+
+    const switcherBtns = chars.map(ch => `
+      <button class="char-tab ${ch.id===c.id ? 'active':''}" data-action="switch-char" data-char="${ch.id}">
+        ${escapeHtml(ch.name)} <span class="char-tab-klasse">${escapeHtml(ch.klasse)}</span>
+      </button>
+    `).join("");
+
+    return `
+      <button class="btn btn-ghost btn-small" id="back-to-member" style="margin-bottom:18px;">← Zurück zu Mitgliedern</button>
+      <div class="page-title">${escapeHtml(m.name)}</div>
+      <div class="page-sub">
+        <span class="badge rank-${m.rank}">${RANK_LABEL[m.rank]}</span>
+        ${chars.length>1 ? `<span style="margin-left:8px;">${chars.length} Charaktere</span>` : ""}
+      </div>
+
+      <div class="char-switcher">
+        ${switcherBtns}
+        ${canManage ? `<button class="char-tab char-tab-add" data-action="manage-chars">+ Verwalten</button>` : ""}
+      </div>
+
+      <div class="panel">
+        <h3>${escapeHtml(c.name)} <span class="class-badge" style="margin-left:8px;">${escapeHtml(c.klasse)}</span></h3>
+        <div class="page-sub" style="margin-bottom:18px;">Klicke auf einen Slot, um die Ausrüstung ${canManage ? "zu bearbeiten" : "anzusehen"}.</div>
+        <div class="paperdoll">
+          <div class="equip-col">${left.map(slotBtn).join("")}</div>
+          <div class="silhouette" aria-hidden="true">${buildCharacterEmblem(c)}</div>
+          <div class="equip-col">${right.map(slotBtn).join("")}</div>
+        </div>
+      </div>
+
+      ${renderSlotEditor(m, c)}
+      ${renderCharacterModal()}
+    `;
+  }
+
+  function renderSlotEditor(m, activeChar){
+    if(!state.openSlotEditor || state.openSlotEditor.memberId !== m.id) return "";
+    const s = EQUIP_SLOTS.find(x=>x.key===state.openSlotEditor.slotKey);
+    if(!s) return "";
+    const admin = isAdmin(state.currentUser);
+    const canEdit = admin || m.id===state.currentUser.id;
+    const currentVal = (m.equipment||{})[s.key] || "";
+    const catalog = ITEM_CATALOG[s.key] || [];
+    const useCustom = state.openSlotEditor.useCustom;
+    const CUSTOM_VAL = "__custom__";
+
+    return `
+      <div class="modal-overlay" id="slot-modal-overlay">
+        <div class="modal">
+          <h2>${s.icon} ${s.label}</h2>
+          <div class="sub">${escapeHtml(m.name)}${canEdit ? " — wähle die Ausrüstung für diesen Slot (Kategorien & Seltenheit laut Taiwan-Server-Item-Datenbank)." : ""}</div>
+          ${canEdit ? `
+            <div class="field">
+              <label for="slot-select">Ausrüstung</label>
+              <select id="slot-select">
+                <option value="">– leer –</option>
+                ${catalog.map(opt=>`<option value="${escapeHtml(opt)}" ${!useCustom && opt===currentVal ? 'selected':''}>${escapeHtml(opt)}</option>`).join("")}
+                <option value="${CUSTOM_VAL}" ${useCustom ? 'selected':''}>Eigener Name…</option>
+              </select>
+            </div>
+            ${useCustom ? `
+            <div class="field">
+              <label for="slot-custom">Eigener Item-Name</label>
+              <input id="slot-custom" type="text" placeholder="z. B. Klinge des Draupnir" value="${escapeHtml(!catalog.includes(currentVal) ? currentVal : '')}">
+            </div>` : ""}
+            <div class="modal-actions">
+              <button class="btn btn-danger" id="slot-clear">Entfernen</button>
+              <button class="btn btn-primary" id="slot-save">Speichern</button>
+            </div>
+            <div class="modal-actions" style="margin-top:8px;">
+              <button class="btn btn-ghost" id="close-slot-modal" style="width:100%;">Schließen</button>
+            </div>
+          ` : `
+            <p style="font-size:14px; margin-bottom:20px;">${currentVal ? escapeHtml(currentVal) : "Dieser Slot ist noch leer."}</p>
+            <div class="modal-actions">
+              <button class="btn btn-ghost" id="close-slot-modal" style="width:100%;">Schließen</button>
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+  }
+
+  function attachCharacterEvents(){
+    const back = document.getElementById("back-to-member");
+    if(back){ back.addEventListener("click", ()=>{ state.view="member"; state.characterFor=null; render(); }); }
+
+    document.querySelectorAll('[data-action="edit-slot"]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const m = state.members.find(x=>x.id===state.characterFor);
+        const currentVal = (m && m.equipment && m.equipment[btn.dataset.slot]) || "";
+        const catalog = ITEM_CATALOG[btn.dataset.slot] || [];
+        const useCustom = !!currentVal && !catalog.includes(currentVal);
+        state.openSlotEditor = {memberId: state.characterFor, slotKey: btn.dataset.slot, useCustom};
+        render();
+      });
+    });
+    const closeSlot = document.getElementById("close-slot-modal");
+    if(closeSlot){ closeSlot.addEventListener("click", ()=>{ state.openSlotEditor=null; render(); }); }
+    const slotOverlay = document.getElementById("slot-modal-overlay");
+    if(slotOverlay){
+      slotOverlay.addEventListener("click", (e)=>{ if(e.target===slotOverlay){ state.openSlotEditor=null; render(); } });
+    }
+    const slotSelect = document.getElementById("slot-select");
+    if(slotSelect){
+      slotSelect.addEventListener("change", ()=>{
+        state.openSlotEditor.useCustom = slotSelect.value === "__custom__";
+        render();
+      });
+    }
+    const slotSave = document.getElementById("slot-save");
+    if(slotSave){
+      slotSave.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.characterFor);
+        const sel = document.getElementById("slot-select").value;
+        let val;
+        if(sel === "__custom__"){
+          val = document.getElementById("slot-custom").value.trim();
+        } else {
+          val = sel;
+        }
+        if(m && state.openSlotEditor){
+          m.equipment = m.equipment || {};
+          if(val){ m.equipment[state.openSlotEditor.slotKey] = val; }
+          else { delete m.equipment[state.openSlotEditor.slotKey]; }
+          await saveMembers();
+        }
+        state.openSlotEditor = null;
+        render();
+      });
+    }
+    const slotClear = document.getElementById("slot-clear");
+    if(slotClear){
+      slotClear.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.characterFor);
+        if(m && state.openSlotEditor){
+          m.equipment = m.equipment || {};
+          delete m.equipment[state.openSlotEditor.slotKey];
+          await saveMembers();
+        }
+        state.openSlotEditor = null;
+        render();
+      });
+    }
+  }
+
+  function attachAdminEvents(){
+    const volSlider = document.getElementById("music-volume");
+    if(volSlider){
+      volSlider.addEventListener("input", async ()=>{
+        await setMusicVolume(parseInt(volSlider.value,10));
+        const label = volSlider.previousElementSibling;
+        if(label) label.textContent = `Lautstärke (${volSlider.value}%)`;
+      });
+    }
+    const urlApply = document.getElementById("music-url-apply");
+    if(urlApply){
+      urlApply.addEventListener("click", async ()=>{
+        const url = document.getElementById("music-url").value.trim();
+        await setMusicUrl(url);
+      });
+    }
   }
 
   /* ---------------- Render dispatcher ---------------- */
@@ -1025,7 +1540,8 @@
       case "member": main.innerHTML = renderMember(); attachMemberEvents(); break;
       case "kalender": main.innerHTML = renderKalender(); attachKalenderEvents(); break;
       case "ticket": main.innerHTML = renderTicket(); attachTicketEvents(); break;
-      case "admin": main.innerHTML = isAdmin(state.currentUser) ? renderAdmin() : renderHome(); break;
+      case "admin": main.innerHTML = isAdmin(state.currentUser) ? renderAdmin() : renderHome(); if(isAdmin(state.currentUser)) attachAdminEvents(); break;
+      case "character": main.innerHTML = renderCharacter(); attachCharacterEvents(); break;
       default: main.innerHTML = renderHome();
     }
   }
@@ -1041,13 +1557,15 @@
       });
     });
     document.querySelectorAll('[data-action="set-rank"]').forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
         const m = state.members.find(x=>x.id===btn.dataset.id);
         if(m){ m.rank = btn.dataset.rank; state.openRowMenu = null; await saveMembers(); render(); }
       });
     });
     document.querySelectorAll('[data-action="remove"]').forEach(btn=>{
-      btn.addEventListener("click", async ()=>{
+      btn.addEventListener("click", async (e)=>{
+        e.stopPropagation();
         const m = state.members.find(x=>x.id===btn.dataset.id);
         if(!m) return;
         if(!confirm(`${m.name} wirklich aus der Gilde entfernen?`)) return;
@@ -1057,14 +1575,22 @@
         render();
       });
     });
+    // clicking anywhere on a member row (except the ⋮/class controls) opens the character view
+    document.querySelectorAll('tr.member-row').forEach(tr=>{
+      tr.addEventListener("click", ()=>{
+        state.characterFor = tr.dataset.id;
+        state.view = "character";
+        render();
+      });
+    });
     // close the row popover when clicking anywhere else
     document.addEventListener("click", closeRowMenuOnce, {once:true});
     function closeRowMenuOnce(){
       if(state.openRowMenu){ state.openRowMenu = null; render(); }
     }
 
-    // "⋯" behind Klasse: open the multi-class modal
-    document.querySelectorAll('[data-action="open-class-modal"]').forEach(btn=>{
+    // Klasse-Badge: öffnet die Charakterverwaltung des Mitglieds
+    document.querySelectorAll('[data-action="open-char-modal"]').forEach(btn=>{
       btn.addEventListener("click", (e)=>{
         e.stopPropagation();
         state.openClassModalFor = btn.dataset.id;
@@ -1081,31 +1607,65 @@
         if(e.target === classModalOverlay){ state.openClassModalFor = null; render(); }
       });
     }
-    document.querySelectorAll('[data-action="toggle-klasse"]').forEach(cb=>{
-      cb.addEventListener("change", async ()=>{
+    document.querySelectorAll('[data-action="rename-char"]').forEach(input=>{
+      input.addEventListener("change", async ()=>{
         const m = state.members.find(x=>x.id===state.openClassModalFor);
         if(!m) return;
-        const cls = cb.dataset.class;
-        m.klassen = m.klassen || [];
-        if(cb.checked){
-          if(!m.klassen.includes(cls)) m.klassen.push(cls);
-        } else {
-          m.klassen = m.klassen.filter(c=>c!==cls);
-        }
+        const c = (m.characters||[]).find(x=>x.id===input.dataset.char);
+        if(!c) return;
+        const val = input.value.trim();
+        if(!val) { input.value = c.name; return; }
+        c.name = val;
         await saveMembers();
         render();
       });
     });
-    document.querySelectorAll('[data-action="set-haupt"]').forEach(btn=>{
+    document.querySelectorAll('[data-action="set-char-klasse"]').forEach(sel=>{
+      sel.addEventListener("change", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const c = (m.characters||[]).find(x=>x.id===sel.dataset.char);
+        if(!c) return;
+        c.klasse = sel.value;
+        await saveMembers();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-action="set-primary-char"]').forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const m = state.members.find(x=>x.id===state.openClassModalFor);
         if(!m) return;
-        m.hauptklasse = btn.dataset.class;
-        if(!m.klassen.includes(m.hauptklasse)) m.klassen.push(m.hauptklasse);
+        const idx = (m.characters||[]).findIndex(x=>x.id===btn.dataset.char);
+        if(idx > 0){ const [c] = m.characters.splice(idx,1); m.characters.unshift(c); }
         await saveMembers();
         render();
       });
     });
+    document.querySelectorAll('[data-action="remove-char"]').forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m || (m.characters||[]).length<=1) return;
+        const c = m.characters.find(x=>x.id===btn.dataset.char);
+        if(c && !confirm(`Charakter "${c.name}" wirklich entfernen?`)) return;
+        m.characters = m.characters.filter(x=>x.id!==btn.dataset.char);
+        await saveMembers();
+        render();
+      });
+    });
+    const addCharBtn = document.getElementById("add-char-btn");
+    if(addCharBtn){
+      addCharBtn.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const nameInput = document.getElementById("new-char-name");
+        const klasseSel = document.getElementById("new-char-klasse");
+        const name = nameInput.value.trim() || `${m.name} (${klasseSel.value})`;
+        m.characters = m.characters || [];
+        m.characters.push({id:uid(), name, klasse:klasseSel.value, equipment:{}});
+        await saveMembers();
+        render();
+      });
+    }
 
     // global guild class list (add / rename / delete class types)
     document.querySelectorAll('[data-action="rename-class"]').forEach(input=>{
@@ -1116,8 +1676,7 @@
         if(state.classes.includes(val)){ alert("Diese Klasse existiert bereits."); input.value = orig; return; }
         state.classes = state.classes.map(c=> c===orig ? val : c);
         state.members.forEach(m=>{
-          if(m.hauptklasse===orig) m.hauptklasse = val;
-          m.klassen = (m.klassen||[]).map(c=> c===orig ? val : c);
+          (m.characters||[]).forEach(c=>{ if(c.klasse===orig) c.klasse = val; });
         });
         await saveClasses(); await saveMembers();
         render();
@@ -1126,12 +1685,12 @@
     document.querySelectorAll('[data-action="delete-class"]').forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const cls = btn.dataset.class;
-        const inUse = state.members.filter(m=>(m.klassen||[]).includes(cls)).length;
-        if(inUse > 0 && !confirm(`${inUse} Mitglied(er) spielen "${cls}". Trotzdem löschen?`)) return;
+        const inUse = state.members.filter(m=>(m.characters||[]).some(c=>c.klasse===cls)).length;
+        if(inUse > 0 && !confirm(`${inUse} Mitglied(er) haben Charaktere mit "${cls}". Trotzdem löschen?`)) return;
         state.classes = state.classes.filter(c=>c!==cls);
+        const fallback = state.classes[0] || "";
         state.members.forEach(m=>{
-          m.klassen = (m.klassen||[]).filter(c=>c!==cls);
-          if(m.hauptklasse===cls) m.hauptklasse = m.klassen[0] || "";
+          (m.characters||[]).forEach(c=>{ if(c.klasse===cls) c.klasse = fallback; });
         });
         await saveClasses(); await saveMembers();
         render();
