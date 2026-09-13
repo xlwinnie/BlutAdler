@@ -729,7 +729,6 @@
   /* ---------------- Music engine ---------------- */
   let audioEl = null;
   let audioCtx = null, masterGain = null, oscillators = [];
-  let localObjectUrl = null;
 
   function startMusic(){
     if(state.musicStarted) return;
@@ -797,12 +796,13 @@
     await saveMusicMeta();
   }
 
-  // Plain external URL (short string, shared with everyone) — the persistent option.
+  // Plain external URL (short string) — persistent, shared with everyone.
   async function setMusicUrl(url){
-    if(localObjectUrl){ URL.revokeObjectURL(localObjectUrl); localObjectUrl = null; }
+    await clearMusicChunks();
     state.music.url = url;
     state.music.filename = "";
-    state.music.isLocal = false;
+    state.music.chunked = false;
+    state.music.chunkCount = 0;
     const ok = await saveMusicMeta();
     stopMusic();
     state.musicStarted = false;
@@ -810,31 +810,50 @@
     return ok;
   }
 
-  // Direct file upload — plays instantly in this browser via an Object URL,
-  // with no size splitting and no upload wait. Trade-off: this is NOT saved
-  // to the shared guild storage (which caps at 5 MB per entry), so it plays
-  // only in the browser/tab that uploaded it, for the current session — it
-  // won't carry over to other members or survive a page reload. For a song
-  // that everyone in the guild hears, use the URL field instead.
-  function playMusicFileLocally(file){
-    if(localObjectUrl){ URL.revokeObjectURL(localObjectUrl); }
-    localObjectUrl = URL.createObjectURL(file);
+  // Uploaded file (base64 data URL) — persistent and shared with everyone.
+  // Split across multiple storage keys (each under the 5 MB-per-key limit)
+  // and reassembled on load, so uploads larger than one key's cap still work.
+  const MUSIC_CHUNK_SIZE = 4 * 1024 * 1024; // 4M characters per chunk
+  async function clearMusicChunks(){
+    const oldCount = state.music.chunkCount || 0;
+    for(let i=0;i<oldCount;i++){
+      try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+    }
+  }
+  async function setMusicFile(dataUrl, filename, onProgress){
+    const newChunks = [];
+    for(let i=0;i<dataUrl.length;i+=MUSIC_CHUNK_SIZE){ newChunks.push(dataUrl.slice(i, i+MUSIC_CHUNK_SIZE)); }
+    const oldCount = state.music.chunkCount || 0;
+    try{
+      for(let i=0;i<newChunks.length;i++){
+        await window.storage.set(`music_chunk_${i}`, newChunks[i], true);
+        if(onProgress) onProgress(i+1, newChunks.length);
+      }
+      for(let i=newChunks.length;i<oldCount;i++){
+        try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+      }
+    }catch(e){
+      return false;
+    }
+    state.music.url = dataUrl;
+    state.music.filename = filename || "";
+    state.music.chunked = true;
+    state.music.chunkCount = newChunks.length;
+    const ok = await saveMusicMeta();
     stopMusic();
-    state.musicStarted = true;
-    audioEl = new Audio(localObjectUrl);
-    audioEl.loop = true;
-    audioEl.volume = (state.music.volume||0)/100;
-    audioEl.play().catch(()=>{});
-    state.music.filename = file.name;
-    state.music.isLocal = true;
-    state.music.url = "";
+    state.musicStarted = false;
+    startMusic();
+    return ok;
   }
 
   async function saveMusicMeta(){
     try{
       await window.storage.set("music", JSON.stringify({
         volume: state.music.volume,
-        externalUrl: state.music.isLocal ? "" : (state.music.url || "")
+        filename: state.music.filename || "",
+        chunked: !!state.music.chunked,
+        chunkCount: state.music.chunkCount || 0,
+        externalUrl: state.music.chunked ? "" : (state.music.url || "")
       }), true);
       return true;
     }catch(e){ return false; }
@@ -863,13 +882,25 @@
       const meta = mu ? JSON.parse(mu.value) : null;
       state.music = {
         volume: meta ? (meta.volume ?? 15) : 15,
-        filename: "",
-        isLocal: false,
-        url: meta ? (meta.externalUrl || "") : ""
+        filename: meta ? (meta.filename || "") : "",
+        chunked: meta ? !!meta.chunked : false,
+        chunkCount: meta ? (meta.chunkCount || 0) : 0,
+        url: meta && !meta.chunked ? (meta.externalUrl || "") : ""
       };
+      if(state.music.chunked && state.music.chunkCount > 0){
+        let combined = "";
+        let ok = true;
+        for(let i=0;i<state.music.chunkCount;i++){
+          try{
+            const part = await window.storage.get(`music_chunk_${i}`, true);
+            combined += part ? part.value : "";
+          }catch(e){ ok = false; break; }
+        }
+        state.music.url = ok ? combined : "";
+      }
     }catch(e){ state.music = null; }
     if(!state.music){
-      state.music = {url:"", volume:15, filename:"", isLocal:false};
+      state.music = {url:"", volume:15, filename:"", chunked:false, chunkCount:0};
       await saveMusicMeta();
     }
 
@@ -1323,32 +1354,31 @@
       <div class="panel">
         <h3>🎵 Gildenmusik</h3>
         <p style="color:var(--text-dim); font-size:13px; line-height:1.6; margin-bottom:14px;">
-          Ohne eigenes Lied läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
+          Lade ein Lied hoch — es wird gespeichert und läuft künftig bei jedem Mitglied automatisch, sobald es sich einloggt. Ohne hochgeladenes Lied läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
         </p>
 
         <div class="field">
-          <label for="music-file">Lied direkt hochladen (sofort abspielen)</label>
+          <label for="music-file">Lied hochladen (wird gespeichert)</label>
           <input id="music-file" type="file" accept="audio/*">
         </div>
         <p id="music-upload-status" style="font-size:12px; color:var(--text-dim); margin:-6px 0 6px;">
-          ${state.music.isLocal && state.music.filename ? `Spielt gerade: <strong style="color:var(--text);">${escapeHtml(state.music.filename)}</strong> (nur in diesem Browser)` : "Kein lokal hochgeladenes Lied aktiv."}
+          ${state.music.filename ? `Aktuell hinterlegt: <strong style="color:var(--text);">${escapeHtml(state.music.filename)}</strong> (läuft bei allen Mitgliedern)` : (state.music.url ? "Aktuell: eigener Track per URL hinterlegt" : "Aktuell: automatisch erzeugte Ambient-Musik (kein eigenes Lied hochgeladen)")}
         </p>
+        ${state.music.chunked || state.music.url ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:12px;">Lied entfernen</button>` : ""}
         <p style="font-size:11.5px; color:var(--text-dim); opacity:0.8; margin-bottom:18px; line-height:1.6;">
-          Läuft ohne Umweg über den Server sofort in deinem Browser — keine Größenbeschränkung, kein Aufteilen. Dafür ist es <strong>nicht gespeichert</strong>: es spielt nur bei dir und nur für diese Sitzung; andere Mitglieder und ein Neuladen der Seite hören es nicht.
+          Hinweis: Dateien bis 20 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgeteilt, damit sie trotz Speichergrenze pro Eintrag gespeichert werden können — das dauert beim Hochladen etwas länger, ist aber dauerhaft und für alle Mitglieder hörbar.
         </p>
 
         <div class="field">
-          <label for="music-url">Musik-URL (für alle gespeichert & hörbar)</label>
-          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${!state.music.isLocal ? escapeHtml(state.music.url||'') : ''}">
+          <label for="music-url">Musik-URL (Alternative statt Upload)</label>
+          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${!state.music.chunked ? escapeHtml(state.music.url||'') : ''}">
         </div>
-        <p style="font-size:11.5px; color:var(--text-dim); opacity:0.8; margin-bottom:8px; line-height:1.6;">
-          Diese Variante wird dauerhaft gespeichert und läuft bei allen Mitgliedern — dafür brauchst du einen Link zu einer bereits gehosteten Datei (z. B. eigener Webspace).
-        </p>
         <button class="btn btn-ghost btn-small" id="music-url-apply" style="margin-bottom:18px;">URL übernehmen</button>
 
         <div class="field">
           <label for="music-volume">Lautstärke (${state.music.volume}%)</label>
           <input id="music-volume" type="range" min="0" max="100" value="${state.music.volume}">
+
         </div>
       </div>
 
@@ -1714,7 +1744,36 @@
       fileInput.addEventListener("change", ()=>{
         const file = fileInput.files && fileInput.files[0];
         if(!file) return;
-        playMusicFileLocally(file);
+        const MAX_BYTES = 20 * 1024 * 1024; // 20 MB Rohgröße — wird intern über mehrere Speicher-Chunks abgelegt
+        if(file.size > MAX_BYTES){
+          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 20 MB verwenden.`);
+          fileInput.value = "";
+          return;
+        }
+        const status = document.getElementById("music-upload-status");
+        if(status) status.textContent = "Lade hoch …";
+        const reader = new FileReader();
+        reader.onload = async ()=>{
+          const dataUrl = reader.result;
+          const ok = await setMusicFile(dataUrl, file.name, (done,total)=>{
+            if(status) status.textContent = `Lade hoch … (Teil ${done}/${total})`;
+          });
+          if(!ok){
+            alert("Die Datei konnte nicht gespeichert werden (vermutlich zu groß für den Speicher). Bitte eine kleinere Datei versuchen.");
+          }
+          render();
+        };
+        reader.onerror = ()=>{
+          alert("Die Datei konnte nicht gelesen werden.");
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    const removeBtn = document.getElementById("music-remove");
+    if(removeBtn){
+      removeBtn.addEventListener("click", async ()=>{
+        if(!confirm("Lied entfernen und zur automatischen Ambient-Musik zurückkehren?")) return;
+        await setMusicUrl("");
         render();
       });
     }
