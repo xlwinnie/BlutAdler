@@ -478,6 +478,22 @@
 
   /* ---------- Character / paperdoll ---------- */
   .paperdoll{display:flex; gap:22px; justify-content:center; align-items:stretch; flex-wrap:wrap;}
+  .char-switcher{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .char-tab{
+    all:unset; cursor:pointer; box-sizing:border-box;
+    display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    padding:8px 14px; border-radius:10px;
+    background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+    font-size:13px; font-weight:600;
+  }
+  .char-tab:hover{background:rgba(255,255,255,0.09);}
+  .char-tab.active{
+    background:linear-gradient(135deg, rgba(255,138,128,0.18), rgba(90,0,0,0.28));
+    border-color:rgba(255,138,128,0.4);
+  }
+  .char-tab-klasse{font-size:11px; font-weight:400; color:var(--text-dim);}
+  .char-tab-add{color:var(--text-dim); font-weight:500; border-style:dashed;}
+  .char-tab-add:hover{color:var(--text);}
   .equip-col{display:flex; flex-direction:column; gap:8px; width:230px; flex-shrink:0;}
   .equip-slot{
     all:unset; cursor:pointer; box-sizing:border-box;
@@ -627,6 +643,7 @@
     openClassModalFor: null,
     newEventTyp: "Dungeon",
     characterFor: null,
+    activeCharId: null,
     openSlotEditor: null,
     music: null,
     musicStarted: false
@@ -1408,9 +1425,10 @@
     if(!s) return "";
     const admin = isAdmin(state.currentUser);
     const canEdit = admin || m.id===state.currentUser.id;
-    const currentVal = (m.equipment||{})[s.key] || "";
     const catalog = ITEM_CATALOG[s.key] || [];
     const useCustom = state.openSlotEditor.useCustom;
+    const pendingVal = state.openSlotEditor.value || "";
+    const pendingCustom = state.openSlotEditor.customText || "";
     const CUSTOM_VAL = "__custom__";
 
     return `
@@ -1422,15 +1440,15 @@
             <div class="field">
               <label for="slot-select">Ausrüstung</label>
               <select id="slot-select">
-                <option value="">– leer –</option>
-                ${catalog.map(opt=>`<option value="${escapeHtml(opt)}" ${!useCustom && opt===currentVal ? 'selected':''}>${escapeHtml(opt)}</option>`).join("")}
+                <option value="" ${!useCustom && pendingVal==="" ? 'selected':''}>– leer –</option>
+                ${catalog.map(opt=>`<option value="${escapeHtml(opt)}" ${!useCustom && opt===pendingVal ? 'selected':''}>${escapeHtml(opt)}</option>`).join("")}
                 <option value="${CUSTOM_VAL}" ${useCustom ? 'selected':''}>Eigener Name…</option>
               </select>
             </div>
             ${useCustom ? `
             <div class="field">
               <label for="slot-custom">Eigener Item-Name</label>
-              <input id="slot-custom" type="text" placeholder="z. B. Klinge des Draupnir" value="${escapeHtml(!catalog.includes(currentVal) ? currentVal : '')}">
+              <input id="slot-custom" type="text" placeholder="z. B. Klinge des Draupnir" value="${escapeHtml(pendingCustom)}">
             </div>` : ""}
             <div class="modal-actions">
               <button class="btn btn-danger" id="slot-clear">Entfernen</button>
@@ -1440,7 +1458,7 @@
               <button class="btn btn-ghost" id="close-slot-modal" style="width:100%;">Schließen</button>
             </div>
           ` : `
-            <p style="font-size:14px; margin-bottom:20px;">${currentVal ? escapeHtml(currentVal) : "Dieser Slot ist noch leer."}</p>
+            <p style="font-size:14px; margin-bottom:20px;">${pendingVal || pendingCustom ? escapeHtml(pendingVal||pendingCustom) : "Dieser Slot ist noch leer."}</p>
             <div class="modal-actions">
               <button class="btn btn-ghost" id="close-slot-modal" style="width:100%;">Schließen</button>
             </div>
@@ -1450,17 +1468,43 @@
     `;
   }
 
+  function activeCharacterOf(m){
+    const chars = m.characters || [];
+    return chars.find(c=>c.id===state.activeCharId) || chars[0];
+  }
+
   function attachCharacterEvents(){
     const back = document.getElementById("back-to-member");
-    if(back){ back.addEventListener("click", ()=>{ state.view="member"; state.characterFor=null; render(); }); }
+    if(back){ back.addEventListener("click", ()=>{ state.view="member"; state.characterFor=null; state.activeCharId=null; render(); }); }
+
+    document.querySelectorAll('[data-action="switch-char"]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.activeCharId = btn.dataset.char;
+        render();
+      });
+    });
+    const manageBtn = document.querySelector('[data-action="manage-chars"]');
+    if(manageBtn){
+      manageBtn.addEventListener("click", ()=>{
+        state.openClassModalFor = state.characterFor;
+        render();
+      });
+    }
 
     document.querySelectorAll('[data-action="edit-slot"]').forEach(btn=>{
       btn.addEventListener("click", ()=>{
         const m = state.members.find(x=>x.id===state.characterFor);
-        const currentVal = (m && m.equipment && m.equipment[btn.dataset.slot]) || "";
+        const c = m && activeCharacterOf(m);
+        const currentVal = (c && c.equipment && c.equipment[btn.dataset.slot]) || "";
         const catalog = ITEM_CATALOG[btn.dataset.slot] || [];
         const useCustom = !!currentVal && !catalog.includes(currentVal);
-        state.openSlotEditor = {memberId: state.characterFor, slotKey: btn.dataset.slot, useCustom};
+        state.openSlotEditor = {
+          memberId: state.characterFor,
+          slotKey: btn.dataset.slot,
+          useCustom,
+          value: useCustom ? "" : currentVal,
+          customText: useCustom ? currentVal : ""
+        };
         render();
       });
     });
@@ -1473,25 +1517,31 @@
     const slotSelect = document.getElementById("slot-select");
     if(slotSelect){
       slotSelect.addEventListener("change", ()=>{
-        state.openSlotEditor.useCustom = slotSelect.value === "__custom__";
+        const v = slotSelect.value;
+        state.openSlotEditor.useCustom = v === "__custom__";
+        state.openSlotEditor.value = v === "__custom__" ? "" : v;
         render();
+      });
+    }
+    const slotCustom = document.getElementById("slot-custom");
+    if(slotCustom){
+      slotCustom.addEventListener("input", ()=>{
+        state.openSlotEditor.customText = slotCustom.value;
       });
     }
     const slotSave = document.getElementById("slot-save");
     if(slotSave){
       slotSave.addEventListener("click", async ()=>{
         const m = state.members.find(x=>x.id===state.characterFor);
-        const sel = document.getElementById("slot-select").value;
-        let val;
-        if(sel === "__custom__"){
-          val = document.getElementById("slot-custom").value.trim();
-        } else {
-          val = sel;
-        }
-        if(m && state.openSlotEditor){
-          m.equipment = m.equipment || {};
-          if(val){ m.equipment[state.openSlotEditor.slotKey] = val; }
-          else { delete m.equipment[state.openSlotEditor.slotKey]; }
+        const c = m && activeCharacterOf(m);
+        const useCustom = state.openSlotEditor.useCustom;
+        const val = useCustom
+          ? (document.getElementById("slot-custom").value || "").trim()
+          : document.getElementById("slot-select").value;
+        if(c && state.openSlotEditor){
+          c.equipment = c.equipment || {};
+          if(val){ c.equipment[state.openSlotEditor.slotKey] = val; }
+          else { delete c.equipment[state.openSlotEditor.slotKey]; }
           await saveMembers();
         }
         state.openSlotEditor = null;
@@ -1502,12 +1552,83 @@
     if(slotClear){
       slotClear.addEventListener("click", async ()=>{
         const m = state.members.find(x=>x.id===state.characterFor);
-        if(m && state.openSlotEditor){
-          m.equipment = m.equipment || {};
-          delete m.equipment[state.openSlotEditor.slotKey];
+        const c = m && activeCharacterOf(m);
+        if(c && state.openSlotEditor){
+          c.equipment = c.equipment || {};
+          delete c.equipment[state.openSlotEditor.slotKey];
           await saveMembers();
         }
         state.openSlotEditor = null;
+        render();
+      });
+    }
+
+    // the character-management modal (add/rename/remove/set-primary) can also
+    // be opened from this view — it's rendered by renderCharacterModal(), so
+    // reuse the same wiring as in attachMemberEvents:
+    const closeCharModal = document.getElementById("close-class-modal");
+    if(closeCharModal){ closeCharModal.addEventListener("click", ()=>{ state.openClassModalFor=null; render(); }); }
+    const charModalOverlay = document.getElementById("class-modal-overlay");
+    if(charModalOverlay){
+      charModalOverlay.addEventListener("click", (e)=>{ if(e.target===charModalOverlay){ state.openClassModalFor=null; render(); } });
+    }
+    document.querySelectorAll('[data-action="rename-char"]').forEach(input=>{
+      input.addEventListener("change", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const c = (m.characters||[]).find(x=>x.id===input.dataset.char);
+        if(!c) return;
+        const val = input.value.trim();
+        if(!val) { input.value = c.name; return; }
+        c.name = val;
+        await saveMembers();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-action="set-char-klasse"]').forEach(sel=>{
+      sel.addEventListener("change", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const c = (m.characters||[]).find(x=>x.id===sel.dataset.char);
+        if(!c) return;
+        c.klasse = sel.value;
+        await saveMembers();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-action="set-primary-char"]').forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const idx = (m.characters||[]).findIndex(x=>x.id===btn.dataset.char);
+        if(idx > 0){ const [c] = m.characters.splice(idx,1); m.characters.unshift(c); }
+        await saveMembers();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-action="remove-char"]').forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m || (m.characters||[]).length<=1) return;
+        const c = m.characters.find(x=>x.id===btn.dataset.char);
+        if(c && !confirm(`Charakter "${c.name}" wirklich entfernen?`)) return;
+        m.characters = m.characters.filter(x=>x.id!==btn.dataset.char);
+        if(state.activeCharId===btn.dataset.char) state.activeCharId = m.characters[0] ? m.characters[0].id : null;
+        await saveMembers();
+        render();
+      });
+    });
+    const addCharBtn = document.getElementById("add-char-btn");
+    if(addCharBtn){
+      addCharBtn.addEventListener("click", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const nameInput = document.getElementById("new-char-name");
+        const klasseSel = document.getElementById("new-char-klasse");
+        const name = nameInput.value.trim() || `${m.name} (${klasseSel.value})`;
+        m.characters = m.characters || [];
+        m.characters.push({id:uid(), name, klasse:klasseSel.value, equipment:{}});
+        await saveMembers();
         render();
       });
     }
@@ -1579,6 +1700,7 @@
     document.querySelectorAll('tr.member-row').forEach(tr=>{
       tr.addEventListener("click", ()=>{
         state.characterFor = tr.dataset.id;
+        state.activeCharId = null;
         state.view = "character";
         render();
       });
