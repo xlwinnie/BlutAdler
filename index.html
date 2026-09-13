@@ -796,12 +796,14 @@
     await saveMusic();
   }
 
-  async function setMusicUrl(url){
+  async function setMusicUrl(url, filename){
     state.music.url = url;
-    await saveMusic();
+    state.music.filename = filename || "";
+    const ok = await saveMusic();
     stopMusic();
     state.musicStarted = false;
     startMusic();
+    return ok;
   }
 
   /* ---------------- Storage ---------------- */
@@ -827,7 +829,7 @@
       state.music = mu ? JSON.parse(mu.value) : null;
     }catch(e){ state.music = null; }
     if(!state.music){
-      state.music = {url:"", volume:15};
+      state.music = {url:"", volume:15, filename:""};
       await saveMusic();
     }
 
@@ -909,7 +911,7 @@
   async function saveClasses(){ try{ await window.storage.set("classes", JSON.stringify(state.classes), true); }catch(e){} }
   async function saveEvents(){ try{ await window.storage.set("events", JSON.stringify(state.events), true); }catch(e){} }
   async function saveTickets(){ try{ await window.storage.set("tickets", JSON.stringify(state.tickets), true); }catch(e){} }
-  async function saveMusic(){ try{ await window.storage.set("music", JSON.stringify(state.music), true); }catch(e){} }
+  async function saveMusic(){ try{ await window.storage.set("music", JSON.stringify(state.music), true); return true; }catch(e){ return false; } }
 
   /* ---------------- Login flow ---------------- */
   const loginScreen = document.getElementById("login-screen");
@@ -1282,13 +1284,24 @@
       <div class="panel">
         <h3>🎵 Gildenmusik</h3>
         <p style="color:var(--text-dim); font-size:13px; line-height:1.6; margin-bottom:14px;">
-          Trage optional die URL zu einer MP3-Datei ein (z. B. ein von euch gehosteter, lizenzfreier Track). Ohne URL läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
+          Lade eine eigene MP3-Datei hoch, die abgespielt wird, sobald man sich einloggt. Ohne hochgeladenes Lied läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
         </p>
         <div class="field">
-          <label for="music-url">Musik-URL (MP3, optional)</label>
-          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${escapeHtml(state.music.url||'')}">
+          <label for="music-file">Lied hochladen (MP3)</label>
+          <input id="music-file" type="file" accept="audio/mpeg,audio/mp3,audio/*">
         </div>
-        <button class="btn btn-ghost btn-small" id="music-url-apply" style="margin-bottom:18px;">Übernehmen</button>
+        <p id="music-upload-status" style="font-size:12px; color:var(--text-dim); margin:-6px 0 14px;">
+          ${state.music.filename ? `Aktuell: <strong style="color:var(--text);">${escapeHtml(state.music.filename)}</strong>` : (state.music.url ? "Aktuell: eigener Track hinterlegt" : "Aktuell: automatisch erzeugte Ambient-Musik (kein eigenes Lied hochgeladen)")}
+        </p>
+        ${state.music.url ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:18px;">Hochgeladenes Lied entfernen</button>` : ""}
+        <p style="font-size:11.5px; color:var(--text-dim); opacity:0.75; margin-bottom:18px; line-height:1.5;">
+          Hinweis: Die Speicherung ist auf ca. 3–4 MB begrenzt (kurze/komprimierte MP3s funktionieren am besten). Alternativ kannst du weiterhin eine URL eintragen:
+        </p>
+        <div class="field">
+          <label for="music-url">Musik-URL (optional, statt Upload)</label>
+          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${state.music.url && !state.music.filename ? escapeHtml(state.music.url) : ''}">
+        </div>
+        <button class="btn btn-ghost btn-small" id="music-url-apply" style="margin-bottom:18px;">URL übernehmen</button>
         <div class="field">
           <label for="music-volume">Lautstärke (${state.music.volume}%)</label>
           <input id="music-volume" type="range" min="0" max="100" value="${state.music.volume}">
@@ -1647,7 +1660,45 @@
     if(urlApply){
       urlApply.addEventListener("click", async ()=>{
         const url = document.getElementById("music-url").value.trim();
-        await setMusicUrl(url);
+        const ok = await setMusicUrl(url, "");
+        if(!ok) alert("Konnte die URL nicht speichern.");
+        render();
+      });
+    }
+    const fileInput = document.getElementById("music-file");
+    if(fileInput){
+      fileInput.addEventListener("change", ()=>{
+        const file = fileInput.files && fileInput.files[0];
+        if(!file) return;
+        const MAX_BYTES = 3 * 1024 * 1024; // ~3 MB Rohgröße, wegen Base64-Overhead & 5MB-Speicherlimit
+        if(file.size > MAX_BYTES){
+          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine kürzere oder stärker komprimierte MP3 (max. ca. 3 MB) verwenden.`);
+          fileInput.value = "";
+          return;
+        }
+        const status = document.getElementById("music-upload-status");
+        if(status) status.textContent = "Lade hoch …";
+        const reader = new FileReader();
+        reader.onload = async ()=>{
+          const dataUrl = reader.result;
+          const ok = await setMusicUrl(dataUrl, file.name);
+          if(!ok){
+            alert("Die Datei konnte nicht gespeichert werden (vermutlich zu groß für den Speicher). Bitte eine kleinere Datei versuchen.");
+          }
+          render();
+        };
+        reader.onerror = ()=>{
+          alert("Die Datei konnte nicht gelesen werden.");
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+    const removeBtn = document.getElementById("music-remove");
+    if(removeBtn){
+      removeBtn.addEventListener("click", async ()=>{
+        if(!confirm("Hochgeladenes Lied entfernen und zur automatischen Ambient-Musik zurückkehren?")) return;
+        await setMusicUrl("", "");
+        render();
       });
     }
   }
