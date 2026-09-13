@@ -793,17 +793,70 @@
   async function setMusicVolume(v){
     state.music.volume = v;
     applyVolume();
-    await saveMusic();
+    await saveMusicMeta();
   }
 
+  // Plain external URL (short string) — no chunking needed.
   async function setMusicUrl(url, filename){
+    await clearMusicChunks();
     state.music.url = url;
     state.music.filename = filename || "";
-    const ok = await saveMusic();
+    state.music.chunked = false;
+    state.music.chunkCount = 0;
+    const ok = await saveMusicMeta();
     stopMusic();
     state.musicStarted = false;
     startMusic();
     return ok;
+  }
+
+  // Uploaded file (base64 data URL) — can be several MB, so it's split
+  // across multiple storage keys (each under the 5 MB-per-key limit) and
+  // reassembled on load. This effectively raises the usable upload size
+  // beyond a single key's cap.
+  const MUSIC_CHUNK_SIZE = 4 * 1024 * 1024; // 4M characters per chunk
+  async function clearMusicChunks(){
+    const oldCount = state.music.chunkCount || 0;
+    for(let i=0;i<oldCount;i++){
+      try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+    }
+  }
+  async function setMusicFile(dataUrl, filename){
+    const newChunks = [];
+    for(let i=0;i<dataUrl.length;i+=MUSIC_CHUNK_SIZE){ newChunks.push(dataUrl.slice(i, i+MUSIC_CHUNK_SIZE)); }
+    const oldCount = state.music.chunkCount || 0;
+    try{
+      for(let i=0;i<newChunks.length;i++){
+        await window.storage.set(`music_chunk_${i}`, newChunks[i], true);
+      }
+      // remove now-unused leftover chunks from a previously larger file
+      for(let i=newChunks.length;i<oldCount;i++){
+        try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+      }
+    }catch(e){
+      return false;
+    }
+    state.music.url = dataUrl;
+    state.music.filename = filename || "";
+    state.music.chunked = true;
+    state.music.chunkCount = newChunks.length;
+    const ok = await saveMusicMeta();
+    stopMusic();
+    state.musicStarted = false;
+    startMusic();
+    return ok;
+  }
+  async function saveMusicMeta(){
+    try{
+      await window.storage.set("music", JSON.stringify({
+        volume: state.music.volume,
+        filename: state.music.filename || "",
+        chunked: !!state.music.chunked,
+        chunkCount: state.music.chunkCount || 0,
+        externalUrl: state.music.chunked ? "" : (state.music.url || "")
+      }), true);
+      return true;
+    }catch(e){ return false; }
   }
 
   /* ---------------- Storage ---------------- */
@@ -826,11 +879,29 @@
     }catch(e){ state.tickets = null; }
     try{
       const mu = await window.storage.get("music", true);
-      state.music = mu ? JSON.parse(mu.value) : null;
+      const meta = mu ? JSON.parse(mu.value) : null;
+      state.music = {
+        volume: meta ? (meta.volume ?? 15) : 15,
+        filename: meta ? (meta.filename || "") : "",
+        chunked: meta ? !!meta.chunked : false,
+        chunkCount: meta ? (meta.chunkCount || 0) : 0,
+        url: meta && !meta.chunked ? (meta.externalUrl || "") : ""
+      };
+      if(state.music.chunked && state.music.chunkCount > 0){
+        let combined = "";
+        let ok = true;
+        for(let i=0;i<state.music.chunkCount;i++){
+          try{
+            const part = await window.storage.get(`music_chunk_${i}`, true);
+            combined += part ? part.value : "";
+          }catch(e){ ok = false; break; }
+        }
+        state.music.url = ok ? combined : "";
+      }
     }catch(e){ state.music = null; }
     if(!state.music){
-      state.music = {url:"", volume:15, filename:""};
-      await saveMusic();
+      state.music = {url:"", volume:15, filename:"", chunked:false, chunkCount:0};
+      await saveMusicMeta();
     }
 
     if(!state.classes){
@@ -911,7 +982,6 @@
   async function saveClasses(){ try{ await window.storage.set("classes", JSON.stringify(state.classes), true); }catch(e){} }
   async function saveEvents(){ try{ await window.storage.set("events", JSON.stringify(state.events), true); }catch(e){} }
   async function saveTickets(){ try{ await window.storage.set("tickets", JSON.stringify(state.tickets), true); }catch(e){} }
-  async function saveMusic(){ try{ await window.storage.set("music", JSON.stringify(state.music), true); return true; }catch(e){ return false; } }
 
   /* ---------------- Login flow ---------------- */
   const loginScreen = document.getElementById("login-screen");
@@ -1295,7 +1365,7 @@
         </p>
         ${state.music.url ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:18px;">Hochgeladenes Lied entfernen</button>` : ""}
         <p style="font-size:11.5px; color:var(--text-dim); opacity:0.75; margin-bottom:18px; line-height:1.5;">
-          Hinweis: Dateien bis 5 MB sind erlaubt. Da die Speicherung die Datei intern umwandelt (wodurch sie ca. ein Drittel größer wird), kann der Upload bei Dateien nahe der 5-MB-Grenze dennoch fehlschlagen — kürzere/stärker komprimierte MP3s funktionieren am zuverlässigsten. Alternativ kannst du weiterhin eine URL eintragen:
+          Hinweis: Dateien bis 8 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgesplittet, um die Speichergrenze zu umgehen — das funktioniert zuverlässig, dauert bei größeren Dateien aber einen Moment länger. Alternativ kannst du weiterhin eine URL eintragen:
         </p>
         <div class="field">
           <label for="music-url">Musik-URL (optional, statt Upload)</label>
@@ -1670,9 +1740,9 @@
       fileInput.addEventListener("change", ()=>{
         const file = fileInput.files && fileInput.files[0];
         if(!file) return;
-        const MAX_BYTES = 5 * 1024 * 1024; // 5 MB Rohgröße (Base64-Kodierung macht die gespeicherte Größe ca. 1/3 größer)
+        const MAX_BYTES = 8 * 1024 * 1024; // 8 MB Rohgröße — wird intern über mehrere Speicher-Chunks abgelegt
         if(file.size > MAX_BYTES){
-          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 5 MB verwenden.`);
+          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 8 MB verwenden.`);
           fileInput.value = "";
           return;
         }
@@ -1681,7 +1751,7 @@
         const reader = new FileReader();
         reader.onload = async ()=>{
           const dataUrl = reader.result;
-          const ok = await setMusicUrl(dataUrl, file.name);
+          const ok = await setMusicFile(dataUrl, file.name);
           if(!ok){
             alert("Die Datei konnte nicht gespeichert werden (vermutlich zu groß für den Speicher). Bitte eine kleinere Datei versuchen.");
           }
