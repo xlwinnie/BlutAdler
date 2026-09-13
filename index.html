@@ -1366,7 +1366,7 @@
         </p>
         ${state.music.chunked || state.music.url ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:12px;">Lied entfernen</button>` : ""}
         <p style="font-size:11.5px; color:var(--text-dim); opacity:0.8; margin-bottom:18px; line-height:1.6;">
-          Hinweis: Dateien bis 20 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgeteilt, damit sie trotz Speichergrenze pro Eintrag gespeichert werden können — das dauert beim Hochladen etwas länger, ist aber dauerhaft und für alle Mitglieder hörbar.
+          Hinweis: Dateien bis 50 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgeteilt, damit sie trotz Speichergrenze pro Eintrag gespeichert werden können — bei Dateien dieser Größe kann der Upload dadurch spürbar länger dauern (viele Teile nacheinander), ist danach aber dauerhaft und für alle Mitglieder hörbar.
         </p>
 
         <div class="field">
@@ -1744,9 +1744,9 @@
       fileInput.addEventListener("change", ()=>{
         const file = fileInput.files && fileInput.files[0];
         if(!file) return;
-        const MAX_BYTES = 20 * 1024 * 1024; // 20 MB Rohgröße — wird intern über mehrere Speicher-Chunks abgelegt
+        const MAX_BYTES = 50 * 1024 * 1024; // 50 MB Rohgröße — wird intern über mehrere Speicher-Chunks abgelegt
         if(file.size > MAX_BYTES){
-          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 20 MB verwenden.`);
+          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 50 MB verwenden.`);
           fileInput.value = "";
           return;
         }
