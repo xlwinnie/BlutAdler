@@ -821,13 +821,14 @@
       try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
     }
   }
-  async function setMusicFile(dataUrl, filename){
+  async function setMusicFile(dataUrl, filename, onProgress){
     const newChunks = [];
     for(let i=0;i<dataUrl.length;i+=MUSIC_CHUNK_SIZE){ newChunks.push(dataUrl.slice(i, i+MUSIC_CHUNK_SIZE)); }
     const oldCount = state.music.chunkCount || 0;
     try{
       for(let i=0;i<newChunks.length;i++){
         await window.storage.set(`music_chunk_${i}`, newChunks[i], true);
+        if(onProgress) onProgress(i+1, newChunks.length);
       }
       // remove now-unused leftover chunks from a previously larger file
       for(let i=newChunks.length;i<oldCount;i++){
@@ -1365,7 +1366,7 @@
         </p>
         ${state.music.url ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:18px;">Hochgeladenes Lied entfernen</button>` : ""}
         <p style="font-size:11.5px; color:var(--text-dim); opacity:0.75; margin-bottom:18px; line-height:1.5;">
-          Hinweis: Dateien bis 8 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgesplittet, um die Speichergrenze zu umgehen — das funktioniert zuverlässig, dauert bei größeren Dateien aber einen Moment länger. Alternativ kannst du weiterhin eine URL eintragen:
+          Hinweis: Dateien bis 20 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgesplittet, um die Speichergrenze zu umgehen — das funktioniert zuverlässig, dauert bei größeren Dateien aber etwas länger beim Hochladen. Alternativ kannst du weiterhin eine URL eintragen:
         </p>
         <div class="field">
           <label for="music-url">Musik-URL (optional, statt Upload)</label>
@@ -1740,9 +1741,9 @@
       fileInput.addEventListener("change", ()=>{
         const file = fileInput.files && fileInput.files[0];
         if(!file) return;
-        const MAX_BYTES = 8 * 1024 * 1024; // 8 MB Rohgröße — wird intern über mehrere Speicher-Chunks abgelegt
+        const MAX_BYTES = 20 * 1024 * 1024; // 20 MB Rohgröße — wird intern über mehrere Speicher-Chunks abgelegt
         if(file.size > MAX_BYTES){
-          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 8 MB verwenden.`);
+          alert(`Die Datei ist zu groß (${(file.size/1024/1024).toFixed(1)} MB). Bitte eine Datei bis maximal 20 MB verwenden.`);
           fileInput.value = "";
           return;
         }
@@ -1751,7 +1752,9 @@
         const reader = new FileReader();
         reader.onload = async ()=>{
           const dataUrl = reader.result;
-          const ok = await setMusicFile(dataUrl, file.name);
+          const ok = await setMusicFile(dataUrl, file.name, (done,total)=>{
+            if(status) status.textContent = `Lade hoch … (Teil ${done}/${total})`;
+          });
           if(!ok){
             alert("Die Datei konnte nicht gespeichert werden (vermutlich zu groß für den Speicher). Bitte eine kleinere Datei versuchen.");
           }
