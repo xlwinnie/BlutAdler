@@ -614,6 +614,8 @@
 </div>
 
 <!-- ================= APP ================= -->
+<div id="yt-player-container" style="position:fixed; width:0; height:0; overflow:hidden; opacity:0; pointer-events:none;" aria-hidden="true"></div>
+
 <div id="app-screen">
   <div class="shell">
     <div class="main" id="main"></div>
@@ -733,7 +735,9 @@
   function startMusic(){
     if(state.musicStarted) return;
     state.musicStarted = true;
-    if(state.music && state.music.url){
+    if(state.music && state.music.youtubeId){
+      startYouTube();
+    } else if(state.music && state.music.url){
       try{
         audioEl = new Audio(state.music.url);
         audioEl.loop = true;
@@ -782,12 +786,18 @@
       try{ audioCtx.close(); }catch(e){}
       audioCtx = null; masterGain = null;
     }
+    if(ytIframe){
+      const c = document.getElementById("yt-player-container");
+      if(c) c.innerHTML = "";
+      ytIframe = null;
+    }
   }
 
   function applyVolume(){
     const vol = ((state.music && state.music.volume) || 0)/100;
     if(audioEl) audioEl.volume = vol;
     if(masterGain) masterGain.gain.value = vol * 0.5;
+    if(ytIframe) ytSendCommand("setVolume", [state.music.volume||0]);
   }
 
   async function setMusicVolume(v){
@@ -803,61 +813,151 @@
     state.music.filename = "";
     state.music.chunked = false;
     state.music.chunkCount = 0;
-    const ok = await saveMusicMeta();
+    state.music.youtubeId = "";
+    const result = await saveMusicMeta();
     stopMusic();
     state.musicStarted = false;
     startMusic();
-    return ok;
+    return result;
   }
 
   // Uploaded file (base64 data URL) — persistent and shared with everyone.
-  // Split across multiple storage keys (each under the 5 MB-per-key limit)
-  // and reassembled on load, so uploads larger than one key's cap still work.
-  const MUSIC_CHUNK_SIZE = 4 * 1024 * 1024; // 4M characters per chunk
+  // Split across multiple storage keys (kept well under the 5 MB-per-key
+  // limit for safety margin) and reassembled on load, with a small delay
+  // between writes to avoid tripping request rate limits on many chunks.
+  const MUSIC_CHUNK_SIZE = 2 * 1024 * 1024; // 2M characters per chunk (safety margin under the 5MB cap)
+  function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+  // Retries a storage.set once or twice on failure (including thrown errors
+  // like transient "Internal server error" responses) before giving up.
+  async function storageSetWithRetry(key, value, shared, attempts){
+    attempts = attempts || 3;
+    let lastError = null;
+    for(let a=0; a<attempts; a++){
+      try{
+        const res = await window.storage.set(key, value, shared);
+        if(res) return { ok:true };
+        lastError = "leere Antwort vom Speicher";
+      }catch(err){
+        lastError = (err && err.message) || String(err);
+      }
+      if(a < attempts-1) await wait(500 * (a+1)); // steigende Pause vor erneutem Versuch
+    }
+    return { ok:false, error: lastError };
+  }
+
   async function clearMusicChunks(){
     const oldCount = state.music.chunkCount || 0;
     for(let i=0;i<oldCount;i++){
       try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+      await wait(60);
     }
   }
   async function setMusicFile(dataUrl, filename, onProgress){
     const newChunks = [];
     for(let i=0;i<dataUrl.length;i+=MUSIC_CHUNK_SIZE){ newChunks.push(dataUrl.slice(i, i+MUSIC_CHUNK_SIZE)); }
     const oldCount = state.music.chunkCount || 0;
-    try{
-      for(let i=0;i<newChunks.length;i++){
-        await window.storage.set(`music_chunk_${i}`, newChunks[i], true);
-        if(onProgress) onProgress(i+1, newChunks.length);
+    for(let i=0;i<newChunks.length;i++){
+      const result = await storageSetWithRetry(`music_chunk_${i}`, newChunks[i], true);
+      if(!result.ok){
+        console.error(`Speichern von Teil ${i+1}/${newChunks.length} fehlgeschlagen nach mehreren Versuchen:`, result.error);
+        return { ok:false, error: result.error, part: i+1, total: newChunks.length };
       }
-      for(let i=newChunks.length;i<oldCount;i++){
-        try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
-      }
-    }catch(e){
-      return false;
+      if(onProgress) onProgress(i+1, newChunks.length);
+      await wait(120); // kleine Pause zwischen den Teilen, um Ratenlimits zu vermeiden
+    }
+    for(let i=newChunks.length;i<oldCount;i++){
+      try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+      await wait(60);
     }
     state.music.url = dataUrl;
     state.music.filename = filename || "";
     state.music.chunked = true;
     state.music.chunkCount = newChunks.length;
-    const ok = await saveMusicMeta();
+    state.music.youtubeId = "";
+    const metaResult = await saveMusicMeta();
     stopMusic();
     state.musicStarted = false;
     startMusic();
-    return ok;
+    return { ok: metaResult.ok, error: metaResult.ok ? null : metaResult.error };
   }
 
   async function saveMusicMeta(){
-    try{
-      await window.storage.set("music", JSON.stringify({
-        volume: state.music.volume,
-        filename: state.music.filename || "",
-        chunked: !!state.music.chunked,
-        chunkCount: state.music.chunkCount || 0,
-        externalUrl: state.music.chunked ? "" : (state.music.url || "")
-      }), true);
-      return true;
-    }catch(e){ return false; }
+    const result = await storageSetWithRetry("music", JSON.stringify({
+      volume: state.music.volume,
+      filename: state.music.filename || "",
+      chunked: !!state.music.chunked,
+      chunkCount: state.music.chunkCount || 0,
+      externalUrl: state.music.chunked ? "" : (state.music.url || ""),
+      youtubeId: state.music.youtubeId || ""
+    }), true);
+    if(!result.ok) console.error("Fehler beim Speichern der Musik-Einstellungen:", result.error);
+    return result;
   }
+
+  function extractYouTubeId(url){
+    if(!url) return null;
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    ];
+    for(const p of patterns){
+      const m = url.match(p);
+      if(m) return m[1];
+    }
+    return null;
+  }
+
+  // YouTube link — only the short video-ID string is persisted (no size
+  // limit problem). Playback uses a plain <iframe> embed controlled via
+  // postMessage (the YouTube "IFrame API" protocol) rather than loading
+  // https://www.youtube.com/iframe_api as an external <script> — that
+  // script tag was silently blocked by this sandbox's content-security
+  // policy (only certain CDNs may be loaded as scripts here), which is
+  // why nothing played before. A plain iframe embed doesn't need that
+  // script at all, so it isn't affected by the same restriction.
+  async function setMusicYoutube(url){
+    const id = extractYouTubeId(url);
+    if(!id) return {ok:false, reason:"invalid"};
+    await clearMusicChunks();
+    state.music.url = "";
+    state.music.chunked = false;
+    state.music.chunkCount = 0;
+    state.music.filename = "";
+    state.music.youtubeId = id;
+    const result = await saveMusicMeta();
+    stopMusic();
+    state.musicStarted = false;
+    startMusic();
+    return result;
+  }
+
+  let ytIframe = null;
+  function ytSendCommand(func, args){
+    if(!ytIframe || !ytIframe.contentWindow) return;
+    try{ ytIframe.contentWindow.postMessage(JSON.stringify({event:"command", func, args: args||[]}), "*"); }catch(e){}
+  }
+  function startYouTube(){
+    const container = document.getElementById("yt-player-container");
+    if(!container) return;
+    const id = state.music.youtubeId;
+    let origin = "*";
+    try{ origin = encodeURIComponent(window.location.origin); }catch(e){}
+    const src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0&disablekb=1&fs=0&modestbranding=1&enablejsapi=1&origin=${origin}`;
+    container.innerHTML = "";
+    ytIframe = document.createElement("iframe");
+    ytIframe.width = "1"; ytIframe.height = "1";
+    ytIframe.style.border = "0";
+    ytIframe.setAttribute("allow", "autoplay; encrypted-media");
+    ytIframe.src = src;
+    ytIframe.onload = ()=>{
+      setTimeout(()=>{
+        ytSendCommand("setVolume", [state.music.volume||0]);
+        ytSendCommand("playVideo", []);
+      }, 400);
+    };
+    container.appendChild(ytIframe);
+  }
+
 
   /* ---------------- Storage ---------------- */
   async function loadAll(){
@@ -885,22 +985,29 @@
         filename: meta ? (meta.filename || "") : "",
         chunked: meta ? !!meta.chunked : false,
         chunkCount: meta ? (meta.chunkCount || 0) : 0,
-        url: meta && !meta.chunked ? (meta.externalUrl || "") : ""
+        url: meta && !meta.chunked ? (meta.externalUrl || "") : "",
+        youtubeId: meta ? (meta.youtubeId || "") : ""
       };
-      if(state.music.chunked && state.music.chunkCount > 0){
+      if(!state.music.youtubeId && state.music.chunked && state.music.chunkCount > 0){
         let combined = "";
         let ok = true;
         for(let i=0;i<state.music.chunkCount;i++){
           try{
             const part = await window.storage.get(`music_chunk_${i}`, true);
-            combined += part ? part.value : "";
+            if(!part){ ok = false; break; }
+            combined += part.value;
           }catch(e){ ok = false; break; }
         }
         state.music.url = ok ? combined : "";
+        if(!ok) console.error("Konnte gespeichertes Lied nicht vollständig laden (fehlender Chunk).");
       }
-    }catch(e){ state.music = null; }
+    }catch(e){
+      const msg = (e && e.message) || String(e);
+      if(!/not found/i.test(msg)) console.error("Fehler beim Laden der Musik-Einstellungen:", e);
+      state.music = null;
+    }
     if(!state.music){
-      state.music = {url:"", volume:15, filename:"", chunked:false, chunkCount:0};
+      state.music = {url:"", volume:15, filename:"", chunked:false, chunkCount:0, youtubeId:""};
       await saveMusicMeta();
     }
 
@@ -989,7 +1096,7 @@
   const modal = document.getElementById("login-modal");
 
   document.getElementById("open-discord-login").addEventListener("click", async ()=>{
-    if(!state.loaded) await loadAll();
+    await ensureLoaded();
     const sel = document.getElementById("in-class");
     sel.innerHTML = state.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     modal.style.display = "flex";
@@ -1354,24 +1461,30 @@
       <div class="panel">
         <h3>🎵 Gildenmusik</h3>
         <p style="color:var(--text-dim); font-size:13px; line-height:1.6; margin-bottom:14px;">
-          Lade ein Lied hoch — es wird gespeichert und läuft künftig bei jedem Mitglied automatisch, sobald es sich einloggt. Ohne hochgeladenes Lied läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
+          Hinterlege ein Lied per YouTube-Link, Datei-Upload oder direkter Musik-URL — es läuft künftig bei jedem Mitglied automatisch, sobald es sich einloggt. Ohne eigenes Lied läuft eine ruhige, automatisch erzeugte Ambient-Untermalung. Die Lautstärke kann nur von Leader/Co-Leader angepasst werden.
         </p>
+        <p id="music-upload-status" style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">
+          ${state.music.youtubeId ? `Aktuell: <strong style="color:var(--text);">YouTube-Video ${escapeHtml(state.music.youtubeId)}</strong> (läuft bei allen Mitgliedern)` : state.music.filename ? `Aktuell hinterlegt: <strong style="color:var(--text);">${escapeHtml(state.music.filename)}</strong> (läuft bei allen Mitgliedern)` : (state.music.url ? "Aktuell: eigener Track per URL hinterlegt" : "Aktuell: automatisch erzeugte Ambient-Musik (kein eigenes Lied hinterlegt)")}
+        </p>
+        ${state.music.chunked || state.music.url || state.music.youtubeId ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:18px;">Lied entfernen</button>` : ""}
+
+        <div class="field">
+          <label for="music-youtube">YouTube-Link</label>
+          <input id="music-youtube" type="text" placeholder="https://www.youtube.com/watch?v=…">
+        </div>
+        <button class="btn btn-ghost btn-small" id="music-youtube-apply" style="margin-bottom:20px;">YouTube-Link übernehmen</button>
 
         <div class="field">
           <label for="music-file">Lied hochladen (wird gespeichert)</label>
           <input id="music-file" type="file" accept="audio/*">
         </div>
-        <p id="music-upload-status" style="font-size:12px; color:var(--text-dim); margin:-6px 0 6px;">
-          ${state.music.filename ? `Aktuell hinterlegt: <strong style="color:var(--text);">${escapeHtml(state.music.filename)}</strong> (läuft bei allen Mitgliedern)` : (state.music.url ? "Aktuell: eigener Track per URL hinterlegt" : "Aktuell: automatisch erzeugte Ambient-Musik (kein eigenes Lied hochgeladen)")}
-        </p>
-        ${state.music.chunked || state.music.url ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:12px;">Lied entfernen</button>` : ""}
         <p style="font-size:11.5px; color:var(--text-dim); opacity:0.8; margin-bottom:18px; line-height:1.6;">
-          Hinweis: Dateien bis 50 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgeteilt, damit sie trotz Speichergrenze pro Eintrag gespeichert werden können — bei Dateien dieser Größe kann der Upload dadurch spürbar länger dauern (viele Teile nacheinander), ist danach aber dauerhaft und für alle Mitglieder hörbar.
+          Hinweis: Dateien bis 50 MB sind erlaubt. Größere Dateien werden intern automatisch in mehrere Teile aufgeteilt, damit sie trotz Speichergrenze pro Eintrag gespeichert werden können — bei Dateien dieser Größe kann der Upload dadurch spürbar länger dauern (viele Teile nacheinander), ist danach aber dauerhaft und für alle Mitglieder hörbar. Sollte ein Upload fehlschlagen, zunächst mit einer kleineren Datei testen.
         </p>
 
         <div class="field">
           <label for="music-url">Musik-URL (Alternative statt Upload)</label>
-          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${!state.music.chunked ? escapeHtml(state.music.url||'') : ''}">
+          <input id="music-url" type="text" placeholder="https://…/gildenlied.mp3" value="${(!state.music.chunked && !state.music.youtubeId) ? escapeHtml(state.music.url||'') : ''}">
         </div>
         <button class="btn btn-ghost btn-small" id="music-url-apply" style="margin-bottom:18px;">URL übernehmen</button>
 
@@ -1734,8 +1847,22 @@
     if(urlApply){
       urlApply.addEventListener("click", async ()=>{
         const url = document.getElementById("music-url").value.trim();
-        const ok = await setMusicUrl(url);
-        if(!ok) alert("Konnte die URL nicht speichern.");
+        const result = await setMusicUrl(url);
+        if(!result.ok) alert(`Konnte die URL nicht speichern.\nFehler: ${result.error || "unbekannt"}`);
+        render();
+      });
+    }
+    const youtubeApply = document.getElementById("music-youtube-apply");
+    if(youtubeApply){
+      youtubeApply.addEventListener("click", async ()=>{
+        const url = document.getElementById("music-youtube").value.trim();
+        if(!url) return;
+        const result = await setMusicYoutube(url);
+        if(!result.ok){
+          alert(result.reason === "invalid"
+            ? "Das sieht nicht nach einem gültigen YouTube-Link aus. Bitte einen Link wie https://www.youtube.com/watch?v=… oder https://youtu.be/… verwenden."
+            : `Der YouTube-Link konnte nicht gespeichert werden.\nFehler: ${result.error || "unbekannt"}`);
+        }
         render();
       });
     }
@@ -1755,11 +1882,14 @@
         const reader = new FileReader();
         reader.onload = async ()=>{
           const dataUrl = reader.result;
-          const ok = await setMusicFile(dataUrl, file.name, (done,total)=>{
+          const result = await setMusicFile(dataUrl, file.name, (done,total)=>{
             if(status) status.textContent = `Lade hoch … (Teil ${done}/${total})`;
           });
-          if(!ok){
-            alert("Die Datei konnte nicht gespeichert werden (vermutlich zu groß für den Speicher). Bitte eine kleinere Datei versuchen.");
+          if(!result.ok){
+            const detail = result.part
+              ? `Fehler beim Speichern von Teil ${result.part}/${result.total}: ${result.error}`
+              : `Fehler: ${result.error || "unbekannt"}`;
+            alert(`Die Datei konnte nicht gespeichert werden.\n${detail}\n\nBitte eine kleinere Datei versuchen oder es erneut probieren.`);
           }
           render();
         };
@@ -2024,7 +2154,16 @@
   }
 
   /* ---------------- Init ---------------- */
-  loadAll();
+  // Guard against loadAll() running twice concurrently (e.g. if the user
+  // clicks "login" before the initial background load has finished) — a
+  // race like that caused two simultaneous writes to the same storage key
+  // and surfaced as "Internal server error" from the storage backend.
+  let loadPromise = null;
+  function ensureLoaded(){
+    if(!loadPromise) loadPromise = loadAll();
+    return loadPromise;
+  }
+  ensureLoaded();
 })();
 </script>
 </body>
