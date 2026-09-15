@@ -8,19 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --purple-light:#550080;
-    --purple-mid:#48006c;
-    --purple-dark:#3c005a;
-    --red-light:#ff8a80;
-    --red-dark:#5a0000;
-    --panel:rgba(24,12,40,0.55);
-    --panel-border:rgba(255,255,255,0.09);
-    --text:#f2e9ff;
-    --text-dim:#c9b8e8;
-    --discord:#5865F2;
-    --discord-dark:#4752c4;
+    --bg-black:#050006;
+    --bg-glow:#2a0a22;
+    --panel:rgba(255,255,255,0.035);
+    --panel-2:rgba(20,8,18,0.55);
+    --panel-border:rgba(255,255,255,0.08);
+    --red-light:#ff5566;
+    --red-mid:#ff2d4d;
+    --red-dark:#8a0018;
+    --text:#f5f0f5;
+    --text-dim:#9c93a3;
     --danger:#c0394b;
     --success:#4caf6d;
+    --sidebar-bg:#07020a;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   html{color-scheme:dark;}
@@ -29,7 +29,9 @@
     font-family:'Inter',sans-serif;
     color:var(--text);
     min-height:100vh;
-    background:linear-gradient(150deg, var(--purple-light) 0%, var(--purple-dark) 100%);
+    background:
+      radial-gradient(ellipse 900px 500px at 50% 0%, var(--bg-glow) 0%, transparent 70%),
+      var(--bg-black);
     background-attachment:fixed;
     position:relative;
     overflow-x:hidden;
@@ -38,8 +40,8 @@
     content:"";
     position:fixed; inset:0;
     background-image:
-      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.06), transparent 40%),
-      radial-gradient(circle at 85% 75%, rgba(255,138,128,0.07), transparent 45%);
+      radial-gradient(circle at 15% 20%, rgba(255,255,255,0.03), transparent 40%),
+      radial-gradient(circle at 85% 75%, rgba(255,45,77,0.05), transparent 45%);
     pointer-events:none;
   }
   a{color:inherit;}
@@ -63,13 +65,13 @@
   }
   .login-card{
     width:100%; max-width:420px;
-    background:var(--panel);
+    background:var(--panel-2);
     border:1px solid var(--panel-border);
     backdrop-filter:blur(18px);
     border-radius:18px;
     padding:44px 36px;
     text-align:center;
-    box-shadow:0 30px 60px rgba(0,0,0,0.35);
+    box-shadow:0 30px 60px rgba(0,0,0,0.5);
   }
   .crest{
     width:64px; height:64px; margin:0 auto 18px;
@@ -82,18 +84,11 @@
   .guild-name{
     font-family:'Space Grotesk',sans-serif;
     font-weight:800;
-    font-size:44px;
+    font-size:34px;
     letter-spacing:0.5px;
     line-height:1.1;
-    margin-bottom:6px;
-  }
-  .guild-name .letter,
-  .nav-brand .letter{
-    background:linear-gradient(180deg, var(--red-light), var(--red-dark));
-    -webkit-background-clip:text;
-    background-clip:text;
-    color:transparent;
-    display:inline-block;
+    margin-bottom:14px;
+    color:var(--red-mid);
   }
   .guild-tag{
     color:var(--text-dim);
@@ -103,23 +98,49 @@
   }
   .discord-btn{
     width:100%;
-    background:var(--discord);
+    background:linear-gradient(90deg, var(--red-light), var(--red-dark));
     color:#fff;
     border:none;
     border-radius:10px;
     padding:14px 18px;
-    font-size:15px;
-    font-weight:600;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:0.5px;
     display:flex;
     align-items:center;
     justify-content:center;
     gap:10px;
-    transition:background 0.15s ease, transform 0.1s ease;
+    transition:filter 0.15s ease, transform 0.1s ease;
+    text-transform:uppercase;
   }
-  .discord-btn:hover{background:var(--discord-dark);}
+  .discord-btn:hover{filter:brightness(1.1);}
   .discord-btn:active{transform:scale(0.98);}
+  .or-divider{
+    display:flex; align-items:center; gap:12px;
+    margin:22px 0; color:var(--text-dim); font-size:11px; letter-spacing:1px;
+  }
+  .or-divider::before, .or-divider::after{
+    content:""; flex:1; height:1px; background:rgba(255,255,255,0.12);
+  }
+  .field-plain{margin-bottom:14px;}
+  .field-plain input{
+    width:100%; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+    border-radius:10px; padding:13px 16px; color:var(--text); font-size:14px; font-family:inherit;
+  }
+  .field-plain input::placeholder{color:var(--text-dim);}
+  .outline-btn{
+    width:100%; background:rgba(0,0,0,0.3); border:1px solid var(--red-mid);
+    border-radius:10px; padding:13px 16px; color:var(--text); font-size:14px; font-weight:700;
+    letter-spacing:0.5px; margin-bottom:20px; transition:background 0.15s ease;
+  }
+  .outline-btn:hover{background:rgba(255,45,77,0.1);}
+  .login-links{display:flex; flex-direction:column; gap:12px;}
+  .login-links a{
+    color:var(--text-dim); font-size:13px; text-decoration:none;
+  }
+  .login-links a:hover{color:var(--text);}
   .login-note{
-    margin-top:16px;
+    margin-top:22px;
     font-size:12px;
     color:var(--text-dim);
     opacity:0.75;
@@ -137,11 +158,11 @@
   }
   .modal{
     width:100%; max-width:400px;
-    background:#1b1030;
+    background:#0d0710;
     border:1px solid var(--panel-border);
     border-radius:16px;
     padding:30px 28px;
-    box-shadow:0 30px 70px rgba(0,0,0,0.5);
+    box-shadow:0 30px 70px rgba(0,0,0,0.6);
   }
   .modal h2{
     font-family:'Space Grotesk',sans-serif;
@@ -172,7 +193,7 @@
     color:#fff;
   }
   select option{
-    background:var(--purple-dark);
+    background:#150a13;
     color:#fff;
   }
   .field input:focus, .field select:focus, .field textarea:focus{
@@ -211,14 +232,15 @@
   /* ---------- Top bar (mobile) ---------- */
   .topbar{display:none;}
 
-  /* ---------- Right Nav ---------- */
+  /* ---------- Sidebar (left) ---------- */
   .nav{
-    width:230px;
+    width:260px;
     flex-shrink:0;
-    padding:36px 24px;
+    padding:32px 22px;
     display:flex;
     flex-direction:column;
-    border-right:1px solid rgba(255,255,255,0.08);
+    background:var(--sidebar-bg);
+    border-right:1px solid rgba(255,255,255,0.06);
     order:-1;
   }
   .nav-heading{
@@ -234,43 +256,48 @@
     cursor:pointer;
     font-family:'Space Grotesk',sans-serif;
     font-weight:800;
-    font-size:24px;
-    margin-bottom:4px;
+    font-size:26px;
+    color:var(--red-mid);
+    margin-bottom:2px;
     display:inline-block;
   }
-  .nav-brand:hover .letter{filter:brightness(1.2);}
+  .nav-brand:hover{filter:brightness(1.2);}
+  .nav-tag{
+    font-size:10.5px; color:var(--text-dim); letter-spacing:2px;
+    margin-bottom:30px; font-weight:600;
+  }
   .nav-user{
     font-size:12px; color:var(--text-dim);
-    margin-bottom:28px;
-    padding-bottom:20px;
+    margin-bottom:20px;
+    padding-bottom:16px;
     border-bottom:1px solid rgba(255,255,255,0.08);
   }
   .nav-user strong{color:var(--text); display:block; font-size:14px; margin-bottom:3px;}
-  .nav-links{list-style:none; display:flex; flex-direction:column; gap:4px; flex:1;}
+  .nav-links{list-style:none; display:flex; flex-direction:column; gap:6px; flex:1;}
   .nav-links button{
     all:unset;
-    display:flex; align-items:center; gap:10px;
-    padding:11px 14px;
-    border-radius:9px;
-    font-size:14px; font-weight:500;
+    display:flex; align-items:center; gap:12px;
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:13px; font-weight:700; letter-spacing:0.5px;
     color:var(--text-dim);
     cursor:pointer;
     transition:background 0.15s ease, color 0.15s ease;
   }
-  .nav-links button:hover{background:rgba(255,255,255,0.06); color:var(--text);}
+  .nav-links button:hover{background:rgba(255,255,255,0.05); color:var(--text);}
   .nav-links button.active{
-    background:linear-gradient(135deg, rgba(255,138,128,0.18), rgba(90,0,0,0.28));
+    background:linear-gradient(90deg, rgba(255,45,77,0.35), rgba(138,0,24,0.15));
     color:#fff;
-    box-shadow:inset 0 0 0 1px rgba(255,138,128,0.25);
   }
   .nav-links .divider{height:1px; background:rgba(255,255,255,0.08); margin:10px 4px;}
   .logout-btn{
-    all:unset; cursor:pointer;
-    font-size:12px; color:var(--text-dim);
-    padding:10px 14px;
-    text-align:left;
+    all:unset; cursor:pointer; box-sizing:border-box; text-align:center;
+    font-size:12px; font-weight:700; letter-spacing:1px; color:var(--text);
+    padding:13px 14px;
+    border:1px solid var(--red-mid);
+    border-radius:10px;
   }
-  .logout-btn:hover{color:#ff9aa8;}
+  .logout-btn:hover{background:rgba(255,45,77,0.1);}
 
   /* ---------- Page header ---------- */
   .page-title{
@@ -279,7 +306,8 @@
     font-weight:700;
     margin-bottom:6px;
   }
-  .page-sub{color:var(--text-dim); font-size:14px; margin-bottom:30px;}
+  .page-sub{color:var(--text-dim); font-size:14px; margin-bottom:10px;}
+  .title-underline{width:60px; height:2px; background:linear-gradient(90deg, var(--red-mid), transparent); margin-bottom:24px;}
 
   /* ---------- Cards / panels ---------- */
   .panel{
@@ -293,21 +321,21 @@
   .panel h3{font-family:'Space Grotesk',sans-serif; font-size:17px; margin-bottom:14px; font-weight:700;}
 
   /* ---------- Home ---------- */
-  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px; margin-bottom:24px;}
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px;}
   .stat{
-    background:var(--panel); border:1px solid var(--panel-border); border-radius:14px;
-    padding:18px 20px;
+    background:rgba(0,0,0,0.35); border:1px solid var(--panel-border); border-radius:14px;
+    padding:20px 22px;
   }
-  .stat .num{font-family:'Space Grotesk',sans-serif; font-size:28px; font-weight:800; background:linear-gradient(135deg, var(--red-light), var(--red-dark)); -webkit-background-clip:text; background-clip:text; color:transparent;}
-  .stat .label{font-size:12px; color:var(--text-dim); margin-top:2px;}
-  .home-hero{
-    padding:32px 28px;
-    border-radius:18px;
-    background:linear-gradient(135deg, rgba(255,138,128,0.12), rgba(90,0,0,0.22));
-    border:1px solid rgba(255,138,128,0.2);
-    margin-bottom:26px;
+  .stat-label{font-size:11px; color:var(--text-dim); letter-spacing:1px; margin-bottom:8px;}
+  .stat .num{font-family:'Space Grotesk',sans-serif; font-size:32px; font-weight:800; color:var(--red-mid);}
+  .news-list{display:flex; flex-direction:column; gap:10px;}
+  .news-row{
+    display:flex; justify-content:space-between; align-items:center; gap:12px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06);
+    border-radius:10px; padding:14px 16px; font-size:14px; font-weight:600;
   }
-  .home-hero p{color:var(--text-dim); line-height:1.6; font-size:14.5px; max-width:60ch;}
+  .news-when{font-size:12.5px; color:var(--text-dim); font-weight:400; flex-shrink:0;}
+  .next-event-title{color:var(--red-mid); font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:800; margin-bottom:4px;}
 
   /* ---------- Table ---------- */
   table{width:100%; border-collapse:collapse;}
@@ -319,11 +347,19 @@
   tr:last-child td{border-bottom:none;}
   .member-name{font-weight:600;}
   .member-name .you{font-size:11px; color:var(--text-dim); font-weight:400;}
+  .member-cell{display:flex; align-items:center; gap:12px;}
+  .avatar-circle{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:15px;
+  }
+  .member-name-block{display:flex; flex-direction:column;}
+  .member-rank-sub{font-size:12px; color:var(--text-dim);}
   .badge{
     display:inline-block; padding:4px 10px; border-radius:20px;
     font-size:12px; font-weight:600;
   }
-  .rank-Leader{background:rgba(255,138,128,0.22); color:#ffb3ab; border:1px solid rgba(255,138,128,0.35);}
+  .rank-Leader{background:rgba(255,45,77,0.22); color:#ff8fa0; border:1px solid rgba(255,45,77,0.35);}
   .rank-CoLeader{background:rgba(201,166,240,0.22); color:#e3ccff; border:1px solid rgba(201,166,240,0.35);}
   .rank-Offizier{background:rgba(122,79,176,0.3); color:#dcc9ff; border:1px solid rgba(122,79,176,0.4);}
   .rank-Mitglied{background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid rgba(255,255,255,0.12);}
@@ -338,6 +374,14 @@
     background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
     color:var(--text); font-size:12px; border-radius:6px; padding:5px 6px;
   }
+  .char-pill-list{display:flex; flex-direction:column; gap:6px;}
+  .char-pill-row{display:flex; align-items:center; gap:6px;}
+  .char-pill{
+    all:unset; cursor:pointer;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    padding:5px 12px; border-radius:20px; font-size:12px; color:var(--text-dim);
+  }
+  .char-pill:hover{background:rgba(255,255,255,0.12); color:var(--text);}
 
   /* ---------- Klasse cell + dots menu ---------- */
   .klasse-cell{display:flex; align-items:center; gap:6px;}
@@ -419,6 +463,24 @@
   .add-class-row input{max-width:220px;}
 
   /* ---------- Calendar / events ---------- */
+  .panel-title-icon{color:var(--red-mid); display:flex; align-items:center; gap:8px;}
+  .template-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px;
+    max-height:340px; overflow-y:auto; padding-right:4px; margin-bottom:6px;
+  }
+  .template-card{
+    all:unset; cursor:pointer; box-sizing:border-box;
+    display:flex; align-items:center; gap:12px;
+    background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px; padding:14px 16px;
+  }
+  .template-card:hover{background:rgba(255,255,255,0.06);}
+  .template-card.selected{border-color:var(--red-mid); box-shadow:0 0 0 1px var(--red-mid);}
+  .template-icon{font-size:18px; flex-shrink:0;}
+  .template-info{display:flex; flex-direction:column;}
+  .template-name{font-size:14px; font-weight:700;}
+  .template-meta{font-size:12px; color:var(--text-dim); margin-top:2px;}
+  .btn-wide{width:100%; padding:14px; font-size:13px; letter-spacing:1px;}
   .event-row{
     display:flex; gap:16px; align-items:flex-start;
     padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06);
@@ -426,8 +488,8 @@
   .event-row:last-child{border-bottom:none;}
   .event-date{
     flex-shrink:0; width:60px; text-align:center;
-    background:linear-gradient(135deg, rgba(255,138,128,0.18), rgba(90,0,0,0.3));
-    border:1px solid rgba(255,138,128,0.25);
+    background:linear-gradient(135deg, rgba(255,45,77,0.18), rgba(138,0,24,0.3));
+    border:1px solid rgba(255,45,77,0.25);
     border-radius:10px; padding:8px 4px;
   }
   .event-date .d{font-family:'Space Grotesk',sans-serif; font-weight:800; font-size:18px;}
@@ -437,25 +499,31 @@
   .event-body p{font-size:13px; color:var(--text-dim); line-height:1.5;}
   .event-time{font-size:12px; color:var(--text-dim); margin-top:4px;}
   .evtype-Dungeon{background:rgba(122,79,176,0.3); color:#dcc9ff; border:1px solid rgba(122,79,176,0.4); margin-bottom:6px;}
-  .evtype-Raid{background:rgba(255,138,128,0.22); color:#ffb3ab; border:1px solid rgba(255,138,128,0.35); margin-bottom:6px;}
-  .evtype-PvP{background:rgba(90,0,0,0.3); color:#ff9d9d; border:1px solid rgba(255,138,128,0.3); margin-bottom:6px;}
+  .evtype-Raid{background:rgba(255,45,77,0.22); color:#ff8fa0; border:1px solid rgba(255,45,77,0.35); margin-bottom:6px;}
+  .evtype-PvP{background:rgba(138,0,24,0.3); color:#ff9d9d; border:1px solid rgba(255,45,77,0.3); margin-bottom:6px;}
   .evtype-Treffen{background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid rgba(255,255,255,0.14); margin-bottom:6px;}
   .evtype-Sonstiges{background:rgba(255,255,255,0.05); color:var(--text-dim); border:1px dashed rgba(255,255,255,0.18); margin-bottom:6px;}
   .empty-note{color:var(--text-dim); font-size:13.5px; padding:14px 0;}
+  @media (max-width:600px){
+    .template-grid{grid-template-columns:1fr;}
+  }
 
   /* ---------- Tickets ---------- */
-  .ticket-item{
-    border:1px solid var(--panel-border); border-radius:12px;
-    padding:16px 18px; margin-bottom:12px;
-    background:rgba(255,255,255,0.03);
+  .ticket-list{display:flex; flex-direction:column;}
+  .ticket-row{
+    display:flex; align-items:flex-start; gap:20px;
+    padding:20px 4px;
   }
-  .ticket-top{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:6px;}
-  .ticket-top h4{font-size:14.5px;}
-  .ticket-meta{font-size:12px; color:var(--text-dim); margin-bottom:8px;}
+  .ticket-row.with-divider{border-top:1px solid rgba(255,255,255,0.08);}
+  .ticket-id{font-size:13px; color:var(--text-dim); flex-shrink:0; padding-top:2px; width:48px;}
+  .ticket-main{flex:1; min-width:0;}
+  .ticket-main h4{font-size:15px; margin-bottom:3px;}
+  .ticket-meta{font-size:12.5px; color:var(--text-dim); margin-bottom:8px;}
   .ticket-desc{font-size:13.5px; color:var(--text-dim); line-height:1.55; margin-bottom:10px;}
-  .status{padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;}
-  .status-Offen{background:rgba(255,138,128,0.2); color:#ffb3ab;}
-  .status-Geschlossen{background:rgba(76,175,109,0.18); color:#8be3a6;}
+  .status{padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; flex-shrink:0; letter-spacing:0.5px;}
+  .status-Offen{background:rgba(255,45,77,0.22); color:#ff8fa0;}
+  .status-Geschlossen{background:rgba(255,255,255,0.08); color:var(--text-dim);}
+  .status-InArbeit{background:rgba(120,60,180,0.28); color:#d9b8ff;}
   .reply{
     background:rgba(255,255,255,0.05); border-left:2px solid var(--red-light);
     padding:8px 12px; border-radius:0 8px 8px 0; margin-top:8px; font-size:13px;
@@ -565,21 +633,42 @@
   }
   .visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
   select:focus-visible, input:focus-visible, button:focus-visible{outline:2px solid var(--red-light); outline-offset:2px;}
+
+  /* ---------- Per-letter text gradient (top -> bottom, on each letter) ----------
+     Each character gets wrapped in its own span (see wrapLetters() in the
+     script) so the gradient runs fully across every single letter, not just
+     once across a whole line/paragraph. Buttons, colored badges/pills
+     (rank, status, event-type) and form fields are left alone since their
+     color carries meaning or needs contrast. */
+  .letter-grad{
+    display:inline-block;
+    color: transparent;
+    background-image: linear-gradient(180deg, #fe0000 0.00%, #fb0000 1.64%, #f80000 3.28%, #f50000 4.92%, #f20000 6.56%, #ef0000 8.20%, #ec0000 9.84%, #e90000 11.48%, #e60000 13.11%, #e30000 14.75%, #e00000 16.39%, #dd0000 18.03%, #da0000 19.67%, #d70000 21.31%, #d40000 22.95%, #d10000 24.59%, #ce0000 26.23%, #cb0000 27.87%, #c80000 29.51%, #c50000 31.15%, #c20000 32.79%, #bf0000 34.43%, #bc0000 36.07%, #b90000 37.70%, #b60000 39.34%, #b30000 40.98%, #b00000 42.62%, #ad0000 44.26%, #aa0000 45.90%, #a70000 47.54%, #a40000 49.18%, #a10000 50.82%, #9e0000 52.46%, #9b0000 54.10%, #980000 55.74%, #950000 57.38%, #920000 59.02%, #8f0000 60.66%, #8c0000 62.30%, #890000 63.93%, #860000 65.57%, #830000 67.21%, #800000 68.85%, #7d0000 70.49%, #7a0000 72.13%, #770000 73.77%, #740000 75.41%, #710000 77.05%, #6e0000 78.69%, #6b0000 80.33%, #680000 81.97%, #650000 83.61%, #620000 85.25%, #5f0000 86.89%, #5c0000 88.52%, #590000 90.16%, #560000 91.80%, #530000 93.44%, #500000 95.08%, #4d0000 96.72%, #4a0000 98.36%, #470000 100.00%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
 </style>
 </head>
+
 <body>
 
 <!-- ================= LOGIN ================= -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="crest">BA</div>
-    <div class="guild-name"><span class="letter">B</span><span class="letter">l</span><span class="letter">u</span><span class="letter">t</span><span class="letter">A</span><span class="letter">d</span><span class="letter">l</span><span class="letter">e</span><span class="letter">r</span></div>
-    <div class="guild-tag">Gildenportal &mdash; Ehre. Blut. Flügel.</div>
+    <div class="guild-name">BlutAdler</div>
+    <div class="guild-tag">Melde dich an, um Dashboard, Kalender und Tickets der Gilde zu nutzen.</div>
     <button class="discord-btn" id="open-discord-login">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20.32 4.37a19.8 19.8 0 0 0-4.9-1.52.07.07 0 0 0-.08.04c-.21.38-.45.87-.61 1.26a18.3 18.3 0 0 0-5.48 0 12.6 12.6 0 0 0-.62-1.26.08.08 0 0 0-.08-.04c-1.7.29-3.36.8-4.9 1.52a.07.07 0 0 0-.03.03C.53 8.58-.32 12.65.1 16.67a.08.08 0 0 0 .03.06 19.9 19.9 0 0 0 6 3.03.08.08 0 0 0 .08-.03c.46-.63.87-1.3 1.23-2a.08.08 0 0 0-.04-.11 13 13 0 0 1-1.87-.9.08.08 0 0 1 0-.13c.13-.09.25-.19.37-.29a.07.07 0 0 1 .08 0c3.93 1.8 8.18 1.8 12.06 0a.07.07 0 0 1 .08 0c.12.1.24.2.37.29a.08.08 0 0 1 0 .13c-.6.35-1.22.65-1.87.9a.08.08 0 0 0-.04.11c.37.7.78 1.37 1.23 2a.08.08 0 0 0 .08.03 19.8 19.8 0 0 0 6.01-3.03.08.08 0 0 0 .03-.06c.5-4.65-.62-8.68-2.6-12.27a.06.06 0 0 0-.03-.03ZM8.02 14.24c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.95-2.42 2.15-2.42 1.21 0 2.17 1.1 2.15 2.42 0 1.34-.95 2.42-2.15 2.42Zm7.97 0c-1.18 0-2.15-1.08-2.15-2.42 0-1.33.96-2.42 2.15-2.42 1.21 0 2.17 1.1 2.15 2.42 0 1.34-.94 2.42-2.15 2.42Z"/></svg>
-      Mit Discord anmelden
+      MIT GOOGLE ANMELDEN
     </button>
-    <div class="login-note">Demo-Anmeldung: Da diese Seite ohne eigenen Server läuft, wird der echte Discord-OAuth-Login hier simuliert. Für einen produktiven Einsatz müsste ein Backend die Discord-Rollen automatisch abgleichen.</div>
+    <div class="or-divider"><span>ODER</span></div>
+    <div class="field-plain"><input id="login-email" type="email" placeholder="E-Mail"></div>
+    <div class="field-plain"><input id="login-password" type="password" placeholder="Passwort"></div>
+    <button class="outline-btn" id="open-discord-login-2">ANMELDEN</button>
+    <div class="login-links">
+      <a href="#" id="open-discord-login-3">Noch kein Konto? Jetzt registrieren</a>
+      <a href="#" id="back-to-dashboard-link">Zurück zum Dashboard</a>
+    </div>
+    <div class="login-note">Demo-Anmeldung: Da diese Seite ohne eigenen Server läuft, wird der echte Google-Login hier simuliert.</div>
   </div>
 </div>
 
@@ -620,10 +709,11 @@
   <div class="shell">
     <div class="main" id="main"></div>
     <nav class="nav">
-      <button class="nav-brand" id="nav-brand-home" aria-label="Zur Startseite" title="Zur Startseite"><span class="letter">B</span><span class="letter">l</span><span class="letter">u</span><span class="letter">t</span><span class="letter">A</span><span class="letter">d</span><span class="letter">l</span><span class="letter">e</span><span class="letter">r</span></button>
+      <button class="nav-brand" id="nav-brand-home" aria-label="Zur Startseite" title="Zur Startseite">BlutAdler</button>
+      <div class="nav-tag">GAMING GILDE</div>
       <div class="nav-user" id="nav-user"></div>
       <ul class="nav-links" id="nav-links"></ul>
-      <button class="logout-btn" id="logout-btn">Abmelden</button>
+      <button class="logout-btn" id="logout-btn">ABMELDEN</button>
     </nav>
   </div>
 </div>
@@ -643,7 +733,7 @@
     loaded: false,
     openRowMenu: null,
     openClassModalFor: null,
-    newEventTyp: "Dungeon",
+    newEventTemplate: null,
     characterFor: null,
     activeCharId: null,
     openSlotEditor: null,
@@ -653,15 +743,23 @@
 
   const RANK_LABEL = {Leader:"Leader", CoLeader:"Co-Leader", Offizier:"Offizier", Mitglied:"Mitglied", Rekrut:"Rekrut"};
   const RANK_ORDER = ["Leader","CoLeader","Offizier","Mitglied","Rekrut"];
+  const ROLLE_OPTIONS = ["Tank","Heiler","DPS","Support"];
 
   const EVENT_TYPES = {
-    Dungeon: {label:"Dungeon", icon:"🗝️", content:["Fire Temple","Sanctum Library","Dark Poeta","Void Forge","Crow Cave","Draupnir","Urugugu","Vasharti","Horn Den","Nightmare Layer 1"]},
-    Raid: {label:"Raid", icon:"⚔️", content:["Ladra","Ascension Trial","Sanctuary-Raid"]},
-    PvP: {label:"PvP / Abyss", icon:"🛡️", content:["Abyss-Schlacht","Festungsbelagerung","Open-World PvP"]},
-    Treffen: {label:"Gildentreffen", icon:"📋", content:["Gildentreffen","Strategiebesprechung","Rekrutierungs-Event"]},
-    Sonstiges: {label:"Sonstiges", icon:"✦", content:null}
+    Dungeon: {label:"Dungeon", icon:"🛡️"},
+    Raid: {label:"Raid", icon:"👑"},
+    Sonstiges: {label:"Sonstiges", icon:"✦"}
   };
-  const EVENT_TYPE_ORDER = ["Dungeon","Raid","PvP","Treffen","Sonstiges"];
+  const EVENT_TEMPLATES = [
+    {name:"Draupnir-Höhle", typ:"Dungeon", players:"6 Spieler"},
+    {name:"Tempel des Udas", typ:"Dungeon", players:"6 Spieler"},
+    {name:"Azoturan-Festung", typ:"Dungeon", players:"6 Spieler"},
+    {name:"Theobomos-Geheimlabor", typ:"Dungeon", players:"6 Spieler"},
+    {name:"Feuertempel", typ:"Dungeon", players:"6 Spieler"},
+    {name:"Padmarashkas Höhle", typ:"Raid", players:"12–24 Spieler"},
+    {name:"Festung Tiamat", typ:"Raid", players:"24 Spieler"},
+    {name:"Beshmundir-Tempel", typ:"Raid", players:"12 Spieler"}
+  ];
 
   const EQUIP_SLOTS = [
     {key:"helm", label:"Helm", icon:"🪖", side:"left"},
@@ -815,6 +913,7 @@
     state.music.chunkCount = 0;
     state.music.youtubeId = "";
     const result = await saveMusicMeta();
+    state.music.sharedOk = !result.fellBack;
     stopMusic();
     state.musicStarted = false;
     startMusic();
@@ -836,12 +935,22 @@
     for(let a=0; a<attempts; a++){
       try{
         const res = await window.storage.set(key, value, shared);
-        if(res) return { ok:true };
+        if(res) return { ok:true, usedShared: shared };
         lastError = "leere Antwort vom Speicher";
       }catch(err){
         lastError = (err && err.message) || String(err);
       }
       if(a < attempts-1) await wait(500 * (a+1)); // steigende Pause vor erneutem Versuch
+    }
+    // The shared store is failing consistently (not just intermittently) —
+    // this happens even for tiny payloads, so retries alone won't fix it.
+    // Fall back to personal (non-shared) storage so the feature at least
+    // works for the current browser, and flag that it isn't shared.
+    if(shared){
+      try{
+        const res = await window.storage.set(key, value, false);
+        if(res) return { ok:true, usedShared:false, fellBack:true, error:lastError };
+      }catch(err){ /* fall through to failure below */ }
     }
     return { ok:false, error: lastError };
   }
@@ -850,6 +959,7 @@
     const oldCount = state.music.chunkCount || 0;
     for(let i=0;i<oldCount;i++){
       try{ await window.storage.delete(`music_chunk_${i}`, true); }catch(e){}
+      try{ await window.storage.delete(`music_chunk_${i}`, false); }catch(e){}
       await wait(60);
     }
   }
@@ -857,12 +967,14 @@
     const newChunks = [];
     for(let i=0;i<dataUrl.length;i+=MUSIC_CHUNK_SIZE){ newChunks.push(dataUrl.slice(i, i+MUSIC_CHUNK_SIZE)); }
     const oldCount = state.music.chunkCount || 0;
+    let anyFellBack = false;
     for(let i=0;i<newChunks.length;i++){
       const result = await storageSetWithRetry(`music_chunk_${i}`, newChunks[i], true);
       if(!result.ok){
         console.error(`Speichern von Teil ${i+1}/${newChunks.length} fehlgeschlagen nach mehreren Versuchen:`, result.error);
         return { ok:false, error: result.error, part: i+1, total: newChunks.length };
       }
+      if(result.fellBack) anyFellBack = true;
       if(onProgress) onProgress(i+1, newChunks.length);
       await wait(120); // kleine Pause zwischen den Teilen, um Ratenlimits zu vermeiden
     }
@@ -876,10 +988,12 @@
     state.music.chunkCount = newChunks.length;
     state.music.youtubeId = "";
     const metaResult = await saveMusicMeta();
+    const fellBack = anyFellBack || !!metaResult.fellBack;
+    state.music.sharedOk = !fellBack;
     stopMusic();
     state.musicStarted = false;
     startMusic();
-    return { ok: metaResult.ok, error: metaResult.ok ? null : metaResult.error };
+    return { ok: metaResult.ok, error: metaResult.ok ? null : metaResult.error, fellBack };
   }
 
   async function saveMusicMeta(){
@@ -889,7 +1003,8 @@
       chunked: !!state.music.chunked,
       chunkCount: state.music.chunkCount || 0,
       externalUrl: state.music.chunked ? "" : (state.music.url || ""),
-      youtubeId: state.music.youtubeId || ""
+      youtubeId: state.music.youtubeId || "",
+      sharedOk: state.music.sharedOk !== false
     }), true);
     if(!result.ok) console.error("Fehler beim Speichern der Musik-Einstellungen:", result.error);
     return result;
@@ -925,6 +1040,7 @@
     state.music.filename = "";
     state.music.youtubeId = id;
     const result = await saveMusicMeta();
+    state.music.sharedOk = !result.fellBack;
     stopMusic();
     state.musicStarted = false;
     startMusic();
@@ -978,7 +1094,12 @@
       state.tickets = t ? JSON.parse(t.value) : null;
     }catch(e){ state.tickets = null; }
     try{
-      const mu = await window.storage.get("music", true);
+      let mu = null;
+      try{ mu = await window.storage.get("music", true); }
+      catch(e){ /* not found or shared read failing — try personal fallback below */ }
+      if(!mu){
+        try{ mu = await window.storage.get("music", false); }catch(e){ /* nothing saved there either */ }
+      }
       const meta = mu ? JSON.parse(mu.value) : null;
       state.music = {
         volume: meta ? (meta.volume ?? 15) : 15,
@@ -986,14 +1107,17 @@
         chunked: meta ? !!meta.chunked : false,
         chunkCount: meta ? (meta.chunkCount || 0) : 0,
         url: meta && !meta.chunked ? (meta.externalUrl || "") : "",
-        youtubeId: meta ? (meta.youtubeId || "") : ""
+        youtubeId: meta ? (meta.youtubeId || "") : "",
+        sharedOk: meta ? (meta.sharedOk !== false) : true
       };
       if(!state.music.youtubeId && state.music.chunked && state.music.chunkCount > 0){
         let combined = "";
         let ok = true;
         for(let i=0;i<state.music.chunkCount;i++){
           try{
-            const part = await window.storage.get(`music_chunk_${i}`, true);
+            let part = null;
+            try{ part = await window.storage.get(`music_chunk_${i}`, true); }catch(e){}
+            if(!part){ try{ part = await window.storage.get(`music_chunk_${i}`, false); }catch(e){} }
             if(!part){ ok = false; break; }
             combined += part.value;
           }catch(e){ ok = false; break; }
@@ -1007,7 +1131,7 @@
       state.music = null;
     }
     if(!state.music){
-      state.music = {url:"", volume:15, filename:"", chunked:false, chunkCount:0, youtubeId:""};
+      state.music = {url:"", volume:15, filename:"", chunked:false, chunkCount:0, youtubeId:"", sharedOk:true};
       await saveMusicMeta();
     }
 
@@ -1018,21 +1142,21 @@
     if(!state.members){
       state.members = [
         {id:uid(), name:"Ragnar Sturmklinge", rank:"Leader", characters:[
-          {id:uid(), name:"Ragnar Sturmklinge", klasse:"Templer", equipment:{}}
+          {id:uid(), name:"Ragnar Sturmklinge", klasse:"Templer", rolle:"Tank", equipment:{}}
         ]},
         {id:uid(), name:"Elyndra Nachtblut", rank:"CoLeader", characters:[
-          {id:uid(), name:"Elyndra Nachtblut", klasse:"Zauberer", equipment:{}},
-          {id:uid(), name:"Elyndra Zweitcharakter", klasse:"Geistmeister", equipment:{}}
+          {id:uid(), name:"Elyndra Nachtblut", klasse:"Zauberer", rolle:"DPS", equipment:{}},
+          {id:uid(), name:"Elyndra Zweitcharakter", klasse:"Geistmeister", rolle:"Support", equipment:{}}
         ]},
         {id:uid(), name:"Torvin Eisenfaust", rank:"Offizier", characters:[
-          {id:uid(), name:"Torvin Eisenfaust", klasse:"Gladiator", equipment:{}}
+          {id:uid(), name:"Torvin Eisenfaust", klasse:"Gladiator", rolle:"DPS", equipment:{}}
         ]},
         {id:uid(), name:"Sira Windfeder", rank:"Mitglied", characters:[
-          {id:uid(), name:"Sira Windfeder", klasse:"Ranger", equipment:{}},
-          {id:uid(), name:"Sira Schattenklinge", klasse:"Assassine", equipment:{}}
+          {id:uid(), name:"Sira Windfeder", klasse:"Ranger", rolle:"DPS", equipment:{}},
+          {id:uid(), name:"Sira Schattenklinge", klasse:"Assassine", rolle:"DPS", equipment:{}}
         ]},
         {id:uid(), name:"Dorn Grauwolf", rank:"Rekrut", characters:[
-          {id:uid(), name:"Dorn Grauwolf", klasse:"Assassine", equipment:{}}
+          {id:uid(), name:"Dorn Grauwolf", klasse:"Assassine", rolle:"DPS", equipment:{}}
         ]}
       ];
       await saveMembers();
@@ -1048,14 +1172,16 @@
           id:uid(),
           name: k===oldHaupt ? m.name : `${m.name} (${k})`,
           klasse: k,
+          rolle: "DPS",
           equipment: k===oldHaupt ? oldEquip : {}
-        })) : [{id:uid(), name:m.name, klasse:state.classes[0]||"", equipment:{}}];
+        })) : [{id:uid(), name:m.name, klasse:state.classes[0]||"", rolle:"DPS", equipment:{}}];
         // Hauptcharakter (= alte Hauptklasse) an erste Stelle
         const hi = m.characters.findIndex(c=>c.klasse===oldHaupt);
         if(hi > 0){ const [prim] = m.characters.splice(hi,1); m.characters.unshift(prim); }
         delete m.klasse; delete m.klassen; delete m.hauptklasse; delete m.equipment;
         migrated = true;
       }
+      (m.characters||[]).forEach(c=>{ if(!c.rolle){ c.rolle = "DPS"; migrated = true; } });
     });
     if(migrated) await saveMembers();
     if(!state.events){
@@ -1078,9 +1204,32 @@
     if(eventsMigrated) await saveEvents();
     if(!state.tickets){
       state.tickets = [
-        {id:uid(), title:"Loot-Verteilung unklar", author:"Sira Windfeder", desc:"Beim letzten Raid war die Regel für epische Drops nicht ganz klar.", status:"Offen", replies:[]}
+        {id:uid(), num:1042, title:"Bewerbung: Thorne", author:"Thorne", desc:"Möchte der Gilde beitreten.", status:"Offen", replies:[]},
+        {id:uid(), num:1041, title:"Loot-Streit Zitadelle", author:"Dravok", desc:"Beim letzten Raid war die Regel für epische Drops nicht ganz klar.", status:"In Arbeit", replies:[]},
+        {id:uid(), num:1039, title:"Discord-Rolle fehlt", author:"Ravena", desc:"Die Gildenrolle wurde nach dem Beitritt nicht automatisch vergeben.", status:"Offen", replies:[]},
+        {id:uid(), num:1035, title:"Raidzeit verschieben", author:"Nyxara", desc:"Bitte die Freitags-Raidzeit um eine Stunde nach hinten schieben.", status:"Geschlossen", replies:[]}
       ];
       await saveTickets();
+    }
+    try{
+      const nw = await window.storage.get("news", true);
+      state.news = nw ? JSON.parse(nw.value) : null;
+    }catch(e){ state.news = null; }
+    if(!state.news){
+      state.news = [
+        {id:uid(), title:"Raidnacht: Zitadelle des Blutes", when:"Fr, 20:00 Uhr"},
+        {id:uid(), title:"Neue Rekruten-Runde gestartet", when:"Seit gestern"},
+        {id:uid(), title:"Clanwar gegen Nachtvolk gewonnen", when:"Letzten Sonntag"}
+      ];
+      await saveNews();
+    }
+    try{
+      const st = await window.storage.get("stats", true);
+      state.stats = st ? JSON.parse(st.value) : null;
+    }catch(e){ state.stats = null; }
+    if(!state.stats){
+      state.stats = {siege:0};
+      await saveStats();
     }
     state.loaded = true;
   }
@@ -1089,6 +1238,8 @@
   async function saveClasses(){ try{ await window.storage.set("classes", JSON.stringify(state.classes), true); }catch(e){} }
   async function saveEvents(){ try{ await window.storage.set("events", JSON.stringify(state.events), true); }catch(e){} }
   async function saveTickets(){ try{ await window.storage.set("tickets", JSON.stringify(state.tickets), true); }catch(e){} }
+  async function saveNews(){ try{ await window.storage.set("news", JSON.stringify(state.news), true); }catch(e){} }
+  async function saveStats(){ try{ await window.storage.set("stats", JSON.stringify(state.stats), true); }catch(e){} }
 
   /* ---------------- Login flow ---------------- */
   const loginScreen = document.getElementById("login-screen");
@@ -1101,6 +1252,16 @@
     sel.innerHTML = state.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     modal.style.display = "flex";
   });
+  // The "ANMELDEN" and "Jetzt registrieren" links open the same simulated
+  // login flow — there's no real backend here to run separate Google OAuth
+  // or email/password auth against.
+  const openLogin2 = document.getElementById("open-discord-login-2");
+  if(openLogin2) openLogin2.addEventListener("click", ()=> document.getElementById("open-discord-login").click());
+  const openLogin3 = document.getElementById("open-discord-login-3");
+  if(openLogin3) openLogin3.addEventListener("click", (e)=>{ e.preventDefault(); document.getElementById("open-discord-login").click(); });
+  const backLink = document.getElementById("back-to-dashboard-link");
+  if(backLink) backLink.addEventListener("click", (e)=> e.preventDefault());
+
   document.getElementById("cancel-login").addEventListener("click", ()=>{ modal.style.display = "none"; });
 
   document.getElementById("confirm-login").addEventListener("click", async ()=>{
@@ -1111,7 +1272,7 @@
 
     let existing = state.members.find(m => m.name.toLowerCase() === name.toLowerCase());
     if(!existing){
-      existing = {id:uid(), name, rank, characters:[{id:uid(), name, klasse, equipment:{}}]};
+      existing = {id:uid(), name, rank, characters:[{id:uid(), name, klasse, rolle:"DPS", equipment:{}}]};
       state.members.push(existing);
       await saveMembers();
     } else {
@@ -1120,7 +1281,7 @@
       if(existing.characters.length){
         existing.characters[0].klasse = klasse;
       } else {
-        existing.characters.push({id:uid(), name, klasse, equipment:{}});
+        existing.characters.push({id:uid(), name, klasse, rolle:"DPS", equipment:{}});
       }
       await saveMembers();
     }
@@ -1150,12 +1311,55 @@
     return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[s]));
   }
 
+  /* ---------------- Per-letter gradient ----------------
+     Walks the rendered DOM and wraps every visible character in its own
+     span so the red top-to-bottom gradient runs fully across each letter,
+     not just once across a whole line. Skips buttons, colored badges/pills,
+     form fields, icons and SVG artwork so their own colors stay intact. */
+  const LETTER_GRAD_SKIP_TAGS = new Set(["SCRIPT","STYLE","SVG","INPUT","SELECT","TEXTAREA","IFRAME"]);
+  const LETTER_GRAD_SKIP_CLASSES = [
+    "btn","discord-btn","logout-btn","dots-btn","class-chip-remove","set-haupt","char-tab",
+    "badge","class-badge","class-badge-btn","status","haupt-tag","equip-icon","letter-grad",
+    "rank-Leader","rank-CoLeader","rank-Offizier","rank-Mitglied","rank-Rekrut",
+    "evtype-Dungeon","evtype-Raid","evtype-PvP","evtype-Treffen","evtype-Sonstiges"
+  ];
+  function letterGradShouldSkip(el){
+    if(!el || !el.classList) return false;
+    return LETTER_GRAD_SKIP_CLASSES.some(c=>el.classList.contains(c));
+  }
+  function wrapLetters(root){
+    if(!root) return;
+    function walk(node){
+      if(node.nodeType === Node.ELEMENT_NODE){
+        if(LETTER_GRAD_SKIP_TAGS.has(node.tagName)) return;
+        if(letterGradShouldSkip(node)) return;
+        Array.from(node.childNodes).forEach(walk);
+      } else if(node.nodeType === Node.TEXT_NODE){
+        const text = node.nodeValue;
+        if(!text || !text.trim()) return;
+        const frag = document.createDocumentFragment();
+        for(const ch of text){
+          if(ch === " " || ch === "\n" || ch === "\t"){
+            frag.appendChild(document.createTextNode(ch));
+          } else {
+            const span = document.createElement("span");
+            span.className = "letter-grad";
+            span.textContent = ch;
+            frag.appendChild(span);
+          }
+        }
+        if(node.parentNode) node.parentNode.replaceChild(frag, node);
+      }
+    }
+    walk(root);
+  }
+
   /* ---------------- Nav ---------------- */
   const NAV_ITEMS = [
-    {id:"home", label:"Home", icon:"🏠"},
-    {id:"member", label:"Member", icon:"⚔️"},
+    {id:"home", label:"Dashboard", icon:"▦"},
+    {id:"member", label:"Member", icon:"👤"},
     {id:"kalender", label:"Kalender", icon:"🗓️"},
-    {id:"ticket", label:"Ticket", icon:"🎫"},
+    {id:"ticket", label:"Tickets", icon:"🎫"},
     {id:"admin", label:"Admin", icon:"🛡️", adminOnly:true}
   ];
 
@@ -1184,31 +1388,43 @@
   /* ---------------- Views ---------------- */
   function renderHome(){
     const total = state.members.length;
-    const dist = RANK_ORDER.map(r => ({r, count: state.members.filter(m=>m.rank===r).length}));
+    const activeRaids = state.events.filter(e=>e.typ==="Raid" && new Date(e.date) >= new Date(new Date().toDateString())).length;
+    const openTickets = state.tickets.filter(t=>t.status==="Offen").length;
+    const siege = (state.stats && state.stats.siege) || 0;
     const nextEvent = [...state.events].sort((a,b)=> new Date(a.date)-new Date(b.date))[0];
+    const news = [...(state.news||[])];
 
     return `
-      <div class="home-hero">
-        <div class="page-title">Willkommen zurück, ${escapeHtml(state.currentUser.name.split(" ")[0])}</div>
-        <p>Die Hallen von BlutAdler stehen offen. Prüfe die Gildenmitglieder, plane den nächsten Raid und behalte offene Anliegen im Blick.</p>
-      </div>
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Willkommen zurück, ${escapeHtml(state.currentUser.name.split(" ")[0])}.</div>
+      <div class="title-underline"></div>
+
       <div class="stat-grid">
-        <div class="stat"><div class="num">${total}</div><div class="label">Mitglieder</div></div>
-        <div class="stat"><div class="num">${state.classes.length}</div><div class="label">Klassen</div></div>
-        <div class="stat"><div class="num">${state.events.length}</div><div class="label">Termine</div></div>
-        <div class="stat"><div class="num">${state.tickets.filter(t=>t.status==="Offen").length}</div><div class="label">Offene Tickets</div></div>
+        <div class="stat"><div class="stat-label">MITGLIEDER</div><div class="num">${total}</div></div>
+        <div class="stat"><div class="stat-label">AKTIVE RAIDS</div><div class="num">${activeRaids}</div></div>
+        <div class="stat"><div class="stat-label">OFFENE TICKETS</div><div class="num">${openTickets}</div></div>
+        <div class="stat"><div class="stat-label">SIEGE DIESE WOCHE</div><div class="num">${siege}</div></div>
       </div>
+
       <div class="panel">
-        <h3>Nächster Termin</h3>
-        ${nextEvent ? `
-          <div class="event-row">
-            <div class="event-date"><div class="d">${new Date(nextEvent.date).getDate()}</div><div class="m">${new Date(nextEvent.date).toLocaleDateString('de-DE',{month:'short'})}</div></div>
-            <div class="event-body">
-              <h4>${EVENT_TYPES[nextEvent.typ] ? EVENT_TYPES[nextEvent.typ].icon + " " : ""}${escapeHtml(nextEvent.name)}</h4>
-              <p>${escapeHtml(nextEvent.desc)}</p>
-              <div class="event-time">${nextEvent.time} Uhr</div>
+        <h3>Neuigkeiten</h3>
+        <div class="news-list">
+          ${news.length ? news.map(n=>`
+            <div class="news-row">
+              <span>${escapeHtml(n.title)}</span>
+              <span class="news-when">${escapeHtml(n.when)}</span>
             </div>
-          </div>` : `<div class="empty-note">Aktuell sind keine Termine geplant.</div>`}
+          `).join("") : `<div class="empty-note">Noch keine Neuigkeiten.</div>`}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Nächstes Event</h3>
+        ${nextEvent ? `
+          <div class="next-event-title">${EVENT_TYPES[nextEvent.typ] ? EVENT_TYPES[nextEvent.typ].icon + " " : ""}${escapeHtml(nextEvent.name)}</div>
+          <div class="event-time">${new Date(nextEvent.date).toLocaleDateString('de-DE',{weekday:'long', day:'2-digit', month:'2-digit'})}, ${nextEvent.time} Uhr</div>
+          ${nextEvent.desc ? `<p style="color:var(--text-dim); font-size:13.5px; margin-top:8px; line-height:1.5;">${escapeHtml(nextEvent.desc)}</p>` : ""}
+          ` : `<div class="empty-note">Aktuell sind keine Termine geplant.</div>`}
       </div>
     `;
   }
@@ -1216,19 +1432,36 @@
   function renderMember(){
     const user = state.currentUser;
     const admin = isAdmin(user);
+    const avatarColors = ["#ff2d4d","#c0394b","#8a0018","#d9455f","#a3273f"];
+    function avatarColor(name){
+      let h=0; for(const ch of name) h += ch.charCodeAt(0);
+      return avatarColors[h % avatarColors.length];
+    }
 
     const rows = state.members.map(m => {
       const prim = primaryCharacter(m);
-      const extra = (m.characters || []).length - 1;
+      const chars = m.characters || [];
       const rowMenuOpen = state.openRowMenu === m.id;
       return `
       <tr class="member-row" data-id="${m.id}" tabindex="0" title="Klicken für Charakteransicht">
-        <td data-label="Member"><span class="member-name">${escapeHtml(m.name)}</span> ${m.id===user.id?'<span class="you">(du)</span>':''}</td>
-        <td data-label="Rolle"><span class="badge rank-${m.rank}">${RANK_LABEL[m.rank]}</span></td>
+        <td data-label="Member">
+          <div class="member-cell">
+            <div class="avatar-circle" style="background:${avatarColor(m.name)};">${escapeHtml(m.name.charAt(0).toUpperCase())}</div>
+            <div class="member-name-block">
+              <span class="member-name">${escapeHtml(m.name)}</span>
+              <span class="member-rank-sub">${RANK_LABEL[m.rank]}</span>
+            </div>
+          </div>
+        </td>
+        <td data-label="Rolle">${escapeHtml(prim.rolle || "DPS")}</td>
         <td data-label="Klasse">
-          <div class="klasse-cell">
-            <button class="class-badge class-badge-btn" data-action="open-char-modal" data-id="${m.id}" title="Charaktere von ${escapeHtml(m.name)} ansehen">${escapeHtml(prim.klasse || "—")}</button>
-            ${extra > 0 ? `<span class="klasse-extra">+${extra}</span>` : ""}
+          <div class="char-pill-list">
+            ${chars.map(c=>`
+              <span class="char-pill-row">
+                <button class="char-pill" data-action="open-char-modal" data-id="${m.id}" title="Charaktere von ${escapeHtml(m.name)} verwalten">${escapeHtml(c.name)} · ${escapeHtml(c.rolle||'DPS')} · ${escapeHtml(c.klasse)}</button>
+                ${admin || m.id===user.id ? `<button class="dots-btn" data-action="open-char-modal" data-id="${m.id}" title="Bearbeiten">⋮</button>` : ""}
+              </span>
+            `).join("")}
           </div>
         </td>
         ${admin ? `<td data-label="Admin">
@@ -1248,14 +1481,15 @@
     }).join("");
 
     return `
-      <div class="page-title">Gildenmitglieder</div>
-      <div class="page-sub">${state.members.length} Mitglieder in BlutAdler — klicke auf einen Namen für die Charakteransicht, auf die Klasse für die Charakterübersicht.${admin ? " Über ⋮ passt du Rang und Mitgliedschaft an." : ""}</div>
+      <div class="page-title">Member</div>
+      <div class="page-sub">Die Schwingen der Gilde.</div>
+      <div class="title-underline"></div>
 
       <div class="panel" style="overflow-x:auto;">
         <table>
           <thead>
             <tr>
-              <th>Member</th><th>Rolle</th><th>Klasse</th>${admin ? "<th>Admin</th>" : ""}
+              <th>NAME</th><th>ROLLE</th><th>KLASSE</th>${admin ? "<th></th>" : ""}
             </tr>
           </thead>
           <tbody id="member-tbody">${rows}</tbody>
@@ -1265,7 +1499,7 @@
       ${admin ? `
       <div class="panel">
         <h3>Klassen der Gilde verwalten</h3>
-        <div class="page-sub" style="margin-bottom:14px;">Hier legst du fest, welche Klassen es in BlutAdler überhaupt gibt (Standard: die 8 Aion 2-Klassen). Welche Klasse ein Charakter spielt, stellst du über einen Klick auf die Klasse in der Tabelle ein.</div>
+        <div class="page-sub" style="margin-bottom:14px;">Hier legst du fest, welche Klassen es in BlutAdler überhaupt gibt (Standard: die 8 Aion 2-Klassen). Klasse & Rolle eines Charakters stellst du über einen Klick auf seine Pille in der Tabelle ein.</div>
         <div class="class-list" id="class-list">${renderClassChips()}</div>
         <div class="add-class-row">
           <input type="text" id="new-class-input" placeholder="Neue Klasse, z. B. Brawler">
@@ -1292,39 +1526,36 @@
     if(!m) return "";
     const canManage = isAdmin(state.currentUser) || m.id===state.currentUser.id;
     const chars = m.characters || [];
-    const rows = chars.map((c,i)=>{
-      const isPrim = i===0;
-      return `
-        <div class="class-check-row">
-          ${canManage ? `<input type="text" class="char-name-input" value="${escapeHtml(c.name)}" data-action="rename-char" data-char="${c.id}">` : `<label style="flex:1;">${escapeHtml(c.name)}</label>`}
-          ${canManage ? `
-            <select data-action="set-char-klasse" data-char="${c.id}">
-              ${state.classes.map(k=>`<option value="${escapeHtml(k)}" ${k===c.klasse?'selected':''}>${escapeHtml(k)}</option>`).join("")}
-            </select>
-          ` : `<span class="class-badge">${escapeHtml(c.klasse)}</span>`}
-          ${isPrim ? `<span class="haupt-tag">Hauptcharakter</span>` : (canManage ? `<button class="set-haupt" data-action="set-primary-char" data-char="${c.id}">Als Haupt</button>` : "")}
-          ${canManage && chars.length>1 ? `<button class="class-chip-remove" data-action="remove-char" data-char="${c.id}" title="Charakter entfernen">✕</button>` : ""}
+    const rows = chars.map(c=>`
+        <div class="char-row-simple">
+          <span>${escapeHtml(c.name)} · ${escapeHtml(c.rolle||'DPS')} · ${escapeHtml(c.klasse)}</span>
+          ${canManage && chars.length>1 ? `<button class="remove-link" data-action="remove-char" data-char="${c.id}">Entfernen</button>` : ""}
         </div>
-      `;
-    }).join("");
+    `).join("");
 
     return `
       <div class="modal-overlay" id="class-modal-overlay">
-        <div class="modal">
+        <div class="modal modal-wide">
+          <button class="modal-close-x" id="close-class-modal" aria-label="Schließen">✕</button>
           <h2>Charaktere von ${escapeHtml(m.name)}</h2>
-          <div class="sub">${canManage ? "Alle Charaktere dieses Mitglieds. Jeder Charakter hat seine eigene Ausrüstung." : "Diese Charaktere spielt " + escapeHtml(m.name) + "."}</div>
-          <div class="class-check-list">${rows}</div>
+          <div class="sub">${canManage ? "Alle Charaktere dieses Spielers. Für einen weiteren Charakter Name, Rolle und Klasse angeben." : "Diese Charaktere spielt " + escapeHtml(m.name) + "."}</div>
+          <div class="char-row-list">${rows}</div>
           ${canManage ? `
-          <div class="add-class-row" style="margin-top:12px;">
-            <input type="text" id="new-char-name" placeholder="Name des neuen Charakters">
+          <div class="add-char-divider"></div>
+          <div class="page-sub" style="margin-bottom:12px;">Weiteren Charakter hinzufügen</div>
+          <div class="field-plain"><input type="text" id="new-char-name" placeholder="Charaktername"></div>
+          <div class="new-char-row">
+            <select id="new-char-rolle">
+              <option value="" disabled selected>Rolle wählen...</option>
+              ${ROLLE_OPTIONS.map(r=>`<option value="${r}">${r}</option>`).join("")}
+            </select>
             <select id="new-char-klasse">
+              <option value="" disabled selected>Klasse wählen...</option>
               ${state.classes.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("")}
             </select>
-            <button class="btn btn-primary btn-small" id="add-char-btn">+ Hinzufügen</button>
-          </div>` : ""}
-          <div class="modal-actions" style="margin-top:16px;">
-            <button class="btn btn-ghost" id="close-class-modal" style="width:100%;">Schließen</button>
           </div>
+          <button class="discord-btn" id="add-char-btn" style="text-transform:none; margin-top:16px;">Charakter hinzufügen</button>
+          ` : ""}
         </div>
       </div>
     `;
@@ -1341,48 +1572,54 @@
         <div class="event-body">
           <span class="badge evtype-${ev.typ}">${meta.icon} ${meta.label}</span>
           <h4>${escapeHtml(ev.name)}</h4>
-          <p>${escapeHtml(ev.desc)}</p>
+          ${ev.desc ? `<p>${escapeHtml(ev.desc)}</p>` : ""}
           <div class="event-time">${ev.time} Uhr</div>
         </div>
         ${admin ? `<button class="btn btn-danger btn-small" data-action="delete-event" data-id="${ev.id}">Löschen</button>` : ""}
       </div>
     `;}).join("");
 
-    const currentTyp = state.newEventTyp || "Dungeon";
-    const contentList = EVENT_TYPES[currentTyp].content;
+    const selectedTemplate = state.newEventTemplate || EVENT_TEMPLATES[0].name;
 
     return `
       <div class="page-title">Kalender</div>
-      <div class="page-sub">Raids, Dungeons und Gildentermine.</div>
-      <div class="panel">
-        <h3>Anstehende Termine</h3>
-        ${sorted.length ? rows : `<div class="empty-note">Noch keine Termine eingetragen.</div>`}
-      </div>
+      <div class="page-sub">Aion 2 — Dungeons, Raids und Gilden-Events.</div>
+      <div class="title-underline"></div>
+
       ${admin ? `
       <div class="panel">
-        <h3>Neuen Termin anlegen</h3>
-        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-          <div class="field" style="flex:1; min-width:170px;">
-            <label for="ev-typ">Event-Typ</label>
-            <select id="ev-typ">
-              ${EVENT_TYPE_ORDER.map(t=>`<option value="${t}" ${t===currentTyp?'selected':''}>${EVENT_TYPES[t].icon} ${EVENT_TYPES[t].label}</option>`).join("")}
-            </select>
-          </div>
-          <div class="field" style="flex:1; min-width:190px;">
-            <label for="ev-name">${contentList ? "Dungeon / Raid" : "Titel"}</label>
-            ${contentList
-              ? `<select id="ev-name">${contentList.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("")}</select>`
-              : `<input id="ev-name" type="text" placeholder="z. B. Gildenausflug">`}
-          </div>
+        <h3 class="panel-title-icon">📅 NEUES EVENT ERSTELLEN</h3>
+        <div class="page-sub" style="margin-bottom:10px;">VORLAGE WÄHLEN</div>
+        <div class="template-grid">
+          ${EVENT_TEMPLATES.map(t=>`
+            <button class="template-card ${t.name===selectedTemplate ? 'selected':''}" data-action="select-template" data-name="${escapeHtml(t.name)}">
+              <span class="template-icon">${t.typ==='Raid' ? '👑' : '🛡️'}</span>
+              <span class="template-info">
+                <span class="template-name">${escapeHtml(t.name)}</span>
+                <span class="template-meta">${t.typ} · ${t.players}</span>
+              </span>
+            </button>
+          `).join("")}
         </div>
-        <div style="display:flex; gap:12px; flex-wrap:wrap;">
-          <div class="field" style="flex:1; min-width:150px;"><label for="ev-date">Datum</label><input id="ev-date" type="date"></div>
-          <div class="field" style="flex:1; min-width:120px;"><label for="ev-time">Uhrzeit</label><input id="ev-time" type="time"></div>
-        </div>
-        <div class="field"><label for="ev-desc">Beschreibung</label><textarea id="ev-desc" placeholder="Details zum Termin, z. B. benötigte Rollen"></textarea></div>
-        <button class="btn btn-primary" id="add-event-btn">Termin hinzufügen</button>
+
+        <div class="page-sub" style="margin:20px 0 8px;">DATUM &amp; UHRZEIT</div>
+        <div class="field"><input id="ev-datetime" type="datetime-local"></div>
+        <div class="field"><input id="ev-note" type="text" placeholder="Notiz (optional), z. B. Gruppe 1"></div>
+        <button class="btn btn-primary btn-wide" id="add-event-btn">EVENT ANLEGEN</button>
       </div>` : ""}
+
+      <div class="page-sub" style="margin:26px 0 4px; text-transform:uppercase; font-weight:700; letter-spacing:1px; color:var(--red-mid);">Kommende Termine</div>
+      <div class="panel">
+        ${sorted.length ? rows : `<div class="empty-note">Noch keine Termine eingetragen.</div>`}
+      </div>
     `;
+  }
+
+  function statusClass(status){ return status.replace(/\s+/g, ""); }
+  function nextStatus(status){
+    if(status === "Offen") return "In Arbeit";
+    if(status === "In Arbeit") return "Geschlossen";
+    return "Offen";
   }
 
   function renderTicket(){
@@ -1390,43 +1627,44 @@
     const admin = isAdmin(user);
     const visible = admin ? state.tickets : state.tickets.filter(t=>t.author===user.name);
 
-    const items = visible.map(t => `
-      <div class="ticket-item">
-        <div class="ticket-top">
+    const items = visible.map((t,i) => `
+      <div class="ticket-row ${i>0?'with-divider':''}">
+        <div class="ticket-id">#${t.num || "----"}</div>
+        <div class="ticket-main">
           <h4>${escapeHtml(t.title)}</h4>
-          <span class="status status-${t.status}">${t.status}</span>
+          <div class="ticket-meta">von ${escapeHtml(t.author)}</div>
+          <div class="ticket-desc">${escapeHtml(t.desc)}</div>
+          ${t.replies.map(r=>`<div class="reply"><div class="who">${escapeHtml(r.by)}</div>${escapeHtml(r.text)}</div>`).join("")}
+          ${admin ? `
+            <div class="reply-form">
+              <input type="text" placeholder="Antwort schreiben…" data-reply-input="${t.id}">
+              <button class="btn btn-ghost btn-small" data-action="reply" data-id="${t.id}">Antworten</button>
+            </div>
+            <div class="ticket-actions">
+              <button class="btn btn-ghost btn-small" data-action="toggle-status" data-id="${t.id}">
+                Status: ${nextStatus(t.status)}
+              </button>
+            </div>
+          ` : ""}
         </div>
-        <div class="ticket-meta">von ${escapeHtml(t.author)}</div>
-        <div class="ticket-desc">${escapeHtml(t.desc)}</div>
-        ${t.replies.map(r=>`<div class="reply"><div class="who">${escapeHtml(r.by)}</div>${escapeHtml(r.text)}</div>`).join("")}
-        ${admin ? `
-          <div class="reply-form">
-            <input type="text" placeholder="Antwort schreiben…" data-reply-input="${t.id}">
-            <button class="btn btn-ghost btn-small" data-action="reply" data-id="${t.id}">Antworten</button>
-          </div>
-          <div class="ticket-actions">
-            <button class="btn ${t.status==='Offen'?'btn-primary':'btn-ghost'} btn-small" data-action="toggle-status" data-id="${t.id}">
-              ${t.status==='Offen' ? 'Als geschlossen markieren' : 'Wieder öffnen'}
-            </button>
-          </div>
-        ` : ""}
+        <span class="status status-${statusClass(t.status)}">${t.status.toUpperCase()}</span>
       </div>
     `).join("");
 
     return `
       <div class="page-title">Tickets</div>
-      <div class="page-sub">${admin ? "Alle Anliegen der Gildenmitglieder." : "Deine Anliegen an die Gildenleitung."}</div>
+      <div class="page-sub">Anfragen, Bewerbungen und Streitfälle.</div>
+      <div class="title-underline"></div>
+
+      <div class="panel" style="margin-top:22px;">
+        ${visible.length ? `<div class="ticket-list">${items}</div>` : `<div class="empty-note">Keine Tickets vorhanden.</div>`}
+      </div>
 
       <div class="panel">
         <h3>Neues Ticket erstellen</h3>
         <div class="field"><label for="tk-title">Titel</label><input id="tk-title" type="text" placeholder="Kurze Zusammenfassung"></div>
         <div class="field"><label for="tk-desc">Beschreibung</label><textarea id="tk-desc" placeholder="Was ist dein Anliegen?"></textarea></div>
         <button class="btn btn-primary" id="add-ticket-btn">Ticket absenden</button>
-      </div>
-
-      <div class="panel">
-        <h3>${admin ? "Alle Tickets" : "Deine Tickets"}</h3>
-        ${visible.length ? items : `<div class="empty-note">Keine Tickets vorhanden.</div>`}
       </div>
     `;
   }
@@ -1439,10 +1677,32 @@
       <div class="page-sub">Nur sichtbar für Leader und Co-Leader.</div>
 
       <div class="stat-grid">
-        <div class="stat"><div class="num">${state.members.length}</div><div class="label">Mitglieder gesamt</div></div>
-        <div class="stat"><div class="num">${state.tickets.filter(t=>t.status==='Offen').length}</div><div class="label">Offene Tickets</div></div>
-        <div class="stat"><div class="num">${state.events.length}</div><div class="label">Geplante Termine</div></div>
-        <div class="stat"><div class="num">${state.classes.length}</div><div class="label">Klassen im Einsatz</div></div>
+        <div class="stat"><div class="stat-label">MITGLIEDER GESAMT</div><div class="num">${state.members.length}</div></div>
+        <div class="stat"><div class="stat-label">OFFENE TICKETS</div><div class="num">${state.tickets.filter(t=>t.status==='Offen').length}</div></div>
+        <div class="stat"><div class="stat-label">GEPLANTE TERMINE</div><div class="num">${state.events.length}</div></div>
+        <div class="stat"><div class="stat-label">KLASSEN IM EINSATZ</div><div class="num">${state.classes.length}</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>Dashboard verwalten</h3>
+        <div class="field" style="max-width:220px;">
+          <label for="siege-input">Siege diese Woche</label>
+          <input id="siege-input" type="number" min="0" value="${(state.stats && state.stats.siege) || 0}">
+        </div>
+        <div class="page-sub" style="margin:18px 0 10px;">Neuigkeiten</div>
+        <div class="news-list" style="margin-bottom:14px;">
+          ${(state.news||[]).map(n=>`
+            <div class="news-row">
+              <span>${escapeHtml(n.title)} <span class="news-when">— ${escapeHtml(n.when)}</span></span>
+              <button class="class-chip-remove" data-action="delete-news" data-id="${n.id}" title="Löschen">✕</button>
+            </div>
+          `).join("") || `<div class="empty-note">Noch keine Neuigkeiten.</div>`}
+        </div>
+        <div class="add-class-row">
+          <input type="text" id="new-news-title" placeholder="Titel, z. B. Raidnacht gewonnen">
+          <input type="text" id="new-news-when" placeholder="Zeitangabe, z. B. Heute" style="max-width:160px;">
+          <button class="btn btn-primary btn-small" id="add-news-btn">Hinzufügen</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -1466,6 +1726,10 @@
         <p id="music-upload-status" style="font-size:12px; color:var(--text-dim); margin-bottom:14px;">
           ${state.music.youtubeId ? `Aktuell: <strong style="color:var(--text);">YouTube-Video ${escapeHtml(state.music.youtubeId)}</strong> (läuft bei allen Mitgliedern)` : state.music.filename ? `Aktuell hinterlegt: <strong style="color:var(--text);">${escapeHtml(state.music.filename)}</strong> (läuft bei allen Mitgliedern)` : (state.music.url ? "Aktuell: eigener Track per URL hinterlegt" : "Aktuell: automatisch erzeugte Ambient-Musik (kein eigenes Lied hinterlegt)")}
         </p>
+        ${state.music.sharedOk === false ? `
+        <p style="font-size:12px; color:#ffb3ab; background:rgba(255,138,128,0.12); border:1px solid rgba(255,138,128,0.3); border-radius:8px; padding:10px 12px; margin-bottom:14px; line-height:1.5;">
+          ⚠️ Der geteilte Speicher hat gerade einen Fehler gemeldet — dieses Lied ist deshalb nur in deinem eigenen Browser gespeichert, nicht für die ganze Gilde. Versuch es später noch einmal, damit es auch bei den anderen Mitgliedern läuft.
+        </p>` : ""}
         ${state.music.chunked || state.music.url || state.music.youtubeId ? `<button class="btn btn-danger btn-small" id="music-remove" style="margin-bottom:18px;">Lied entfernen</button>` : ""}
 
         <div class="field">
@@ -1796,6 +2060,17 @@
         render();
       });
     });
+    document.querySelectorAll('[data-action="set-char-rolle"]').forEach(sel=>{
+      sel.addEventListener("change", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const c = (m.characters||[]).find(x=>x.id===sel.dataset.char);
+        if(!c) return;
+        c.rolle = sel.value;
+        await saveMembers();
+        render();
+      });
+    });
     document.querySelectorAll('[data-action="set-primary-char"]').forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const m = state.members.find(x=>x.id===state.openClassModalFor);
@@ -1827,7 +2102,7 @@
         const klasseSel = document.getElementById("new-char-klasse");
         const name = nameInput.value.trim() || `${m.name} (${klasseSel.value})`;
         m.characters = m.characters || [];
-        m.characters.push({id:uid(), name, klasse:klasseSel.value, equipment:{}});
+        m.characters.push({id:uid(), name, klasse:klasseSel.value, rolle:"DPS", equipment:{}});
         await saveMembers();
         render();
       });
@@ -1835,6 +2110,32 @@
   }
 
   function attachAdminEvents(){
+    const siegeInput = document.getElementById("siege-input");
+    if(siegeInput){
+      siegeInput.addEventListener("change", async ()=>{
+        state.stats.siege = parseInt(siegeInput.value,10) || 0;
+        await saveStats();
+        render();
+      });
+    }
+    const addNewsBtn = document.getElementById("add-news-btn");
+    if(addNewsBtn){
+      addNewsBtn.addEventListener("click", async ()=>{
+        const title = document.getElementById("new-news-title").value.trim();
+        const when = document.getElementById("new-news-when").value.trim() || "Gerade eben";
+        if(!title) return;
+        state.news.unshift({id:uid(), title, when});
+        await saveNews();
+        render();
+      });
+    }
+    document.querySelectorAll('[data-action="delete-news"]').forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        state.news = state.news.filter(n=>n.id!==btn.dataset.id);
+        await saveNews();
+        render();
+      });
+    });
     const volSlider = document.getElementById("music-volume");
     if(volSlider){
       volSlider.addEventListener("input", async ()=>{
@@ -1922,6 +2223,10 @@
       case "character": main.innerHTML = renderCharacter(); attachCharacterEvents(); break;
       default: main.innerHTML = renderHome();
     }
+    wrapLetters(document.getElementById("nav-links"));
+    wrapLetters(document.getElementById("nav-user"));
+    wrapLetters(document.getElementById("nav-brand-home"));
+    wrapLetters(main);
   }
 
   /* ---------------- Event wiring per view ---------------- */
@@ -2010,6 +2315,17 @@
         render();
       });
     });
+    document.querySelectorAll('[data-action="set-char-rolle"]').forEach(sel=>{
+      sel.addEventListener("change", async ()=>{
+        const m = state.members.find(x=>x.id===state.openClassModalFor);
+        if(!m) return;
+        const c = (m.characters||[]).find(x=>x.id===sel.dataset.char);
+        if(!c) return;
+        c.rolle = sel.value;
+        await saveMembers();
+        render();
+      });
+    });
     document.querySelectorAll('[data-action="set-primary-char"]').forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const m = state.members.find(x=>x.id===state.openClassModalFor);
@@ -2040,7 +2356,7 @@
         const klasseSel = document.getElementById("new-char-klasse");
         const name = nameInput.value.trim() || `${m.name} (${klasseSel.value})`;
         m.characters = m.characters || [];
-        m.characters.push({id:uid(), name, klasse:klasseSel.value, equipment:{}});
+        m.characters.push({id:uid(), name, klasse:klasseSel.value, rolle:"DPS", equipment:{}});
         await saveMembers();
         render();
       });
@@ -2097,23 +2413,22 @@
         render();
       });
     });
-    const typSelect = document.getElementById("ev-typ");
-    if(typSelect){
-      typSelect.addEventListener("change", ()=>{
-        state.newEventTyp = typSelect.value;
+    document.querySelectorAll('[data-action="select-template"]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        state.newEventTemplate = btn.dataset.name;
         render();
       });
-    }
+    });
     const addBtn = document.getElementById("add-event-btn");
     if(addBtn){
       addBtn.addEventListener("click", async ()=>{
-        const typ = document.getElementById("ev-typ").value;
-        const name = document.getElementById("ev-name").value.trim();
-        const date = document.getElementById("ev-date").value;
-        const time = document.getElementById("ev-time").value || "20:00";
-        const desc = document.getElementById("ev-desc").value.trim();
-        if(!name || !date){ alert("Bitte Dungeon/Raid bzw. Titel sowie Datum angeben."); return; }
-        state.events.push({id:uid(), typ, name, date, time, desc});
+        const templateName = state.newEventTemplate || EVENT_TEMPLATES[0].name;
+        const template = EVENT_TEMPLATES.find(t=>t.name===templateName) || EVENT_TEMPLATES[0];
+        const dt = document.getElementById("ev-datetime").value;
+        const note = document.getElementById("ev-note").value.trim();
+        if(!dt){ alert("Bitte Datum und Uhrzeit angeben."); return; }
+        const [date, time] = dt.split("T");
+        state.events.push({id:uid(), typ:template.typ, name:template.name, date, time: time || "20:00", desc:note});
         await saveEvents();
         render();
       });
@@ -2127,7 +2442,8 @@
         const title = document.getElementById("tk-title").value.trim();
         const desc = document.getElementById("tk-desc").value.trim();
         if(!title || !desc){ alert("Bitte Titel und Beschreibung angeben."); return; }
-        state.tickets.unshift({id:uid(), title, desc, author:state.currentUser.name, status:"Offen", replies:[]});
+        const maxNum = state.tickets.reduce((m,t)=>Math.max(m, t.num||0), 1000);
+        state.tickets.unshift({id:uid(), num:maxNum+1, title, desc, author:state.currentUser.name, status:"Offen", replies:[]});
         await saveTickets();
         render();
       });
@@ -2146,7 +2462,7 @@
     document.querySelectorAll('[data-action="toggle-status"]').forEach(btn=>{
       btn.addEventListener("click", async ()=>{
         const t = state.tickets.find(x=>x.id===btn.dataset.id);
-        t.status = t.status === "Offen" ? "Geschlossen" : "Offen";
+        t.status = nextStatus(t.status);
         await saveTickets();
         render();
       });
@@ -2164,6 +2480,11 @@
     return loadPromise;
   }
   ensureLoaded();
+
+  // Static screens (login screen + Discord-login modal) aren't produced by
+  // render(), so give them the same per-letter gradient once up front.
+  wrapLetters(document.getElementById("login-screen"));
+  wrapLetters(document.getElementById("login-modal"));
 })();
 </script>
 </body>
