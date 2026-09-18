@@ -1410,6 +1410,9 @@
     }
     const discordId = params.get("discord_id");
     if(!discordId) return false;
+
+    const discordAdmin = params.get("discord_admin") === "true";
+    
     const discordUser = {
       id: discordId,
       username: params.get("discord_username") || "Unbekannt",
