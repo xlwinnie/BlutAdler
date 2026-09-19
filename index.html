@@ -1417,6 +1417,7 @@
       id: discordId,
       username: params.get("discord_username") || "Unbekannt",
       avatar: params.get("discord_avatar") || ""
+      isAdmin: discordAdmin
     };
     // Clean the OAuth params out of the URL so refreshing doesn't re-trigger this.
     window.history.replaceState({}, document.title, window.location.pathname);
