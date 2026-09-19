@@ -1005,15 +1005,18 @@
 
   function startMusic(){
     if(state.musicStarted) return;
-    state.musicStarted = true;
     if(state.music && state.music.youtubeId){
+      state.musicStarted = true;
       startYouTube();
     } else if(state.music && state.music.url){
       try{
         audioEl = new Audio(state.music.url);
         audioEl.loop = true;
         audioEl.volume = (state.music.volume||0)/100;
-        audioEl.play().catch(()=>{});
+        // On a bare reload (no click/keypress yet) browsers block autoplay,
+        // so play() rejects — don't mark musicStarted in that case, so the
+        // "first interaction anywhere" listener further down can retry it.
+        audioEl.play().then(()=>{ state.musicStarted = true; }).catch(()=>{});
       }catch(e){}
     } else {
       startAmbientSynth();
@@ -1046,7 +1049,34 @@
       lfoGain.connect(masterGain.gain);
       lfo.start();
       oscillators.push(lfo);
+      // Same autoplay restriction applies to AudioContext: it can start
+      // "suspended" until a real user gesture. Only count this as started
+      // once it's actually audible.
+      if(audioCtx.state === "running"){
+        state.musicStarted = true;
+      } else {
+        audioCtx.resume().then(()=>{ state.musicStarted = true; }).catch(()=>{});
+      }
     }catch(e){}
+  }
+
+  // Browsers block audio until the user has interacted with the page at
+  // least once. On a plain reload/revisit (no login click just happened)
+  // startMusic() above may silently fail — this catches the very first
+  // click/keypress/tap anywhere and retries then, so music still ends up
+  // playing without needing a fresh login.
+  function retryMusicOnFirstInteraction(){
+    const events = ["pointerdown", "keydown", "touchstart"];
+    function tryStart(){
+      if(state.musicStarted){
+        events.forEach(ev => document.removeEventListener(ev, tryStart));
+        return;
+      }
+      if(audioEl){ audioEl.play().then(()=>{ state.musicStarted = true; }).catch(()=>{}); }
+      else if(audioCtx && audioCtx.state !== "running"){ audioCtx.resume().then(()=>{ state.musicStarted = true; }).catch(()=>{}); }
+      else if(!audioEl && !audioCtx && !ytIframe){ startMusic(); }
+    }
+    events.forEach(ev => document.addEventListener(ev, tryStart));
   }
 
   function stopMusic(){
@@ -1540,6 +1570,7 @@
     localStorage.removeItem(DISCORD_SESSION_KEY);
     stopMusic();
     state.musicStarted = false;
+    retryMusicOnFirstInteraction(); // re-arm in case the listeners already self-removed
     appScreen.style.display = "none";
     loginScreen.style.display = "flex";
   });
@@ -2796,6 +2827,7 @@
   if(!handleOAuthReturn()){
     trySessionRestore();
   }
+  retryMusicOnFirstInteraction();
 
   // Static screens (login screen + Discord-login modal) aren't produced by
   // render(), so give them the same per-letter gradient once up front.
