@@ -1347,79 +1347,85 @@
   async function saveStats(){ try{ await window.storage.set("stats", JSON.stringify(state.stats), true); }catch(e){} }
 
   /* ---------------- Login flow ---------------- */
-  const gameSelectScreen = document.getElementById("game-select-screen");
-  const loginScreen = document.getElementById("login-screen");
-  const appScreen = document.getElementById("app-screen");
-  const modal = document.getElementById("login-modal");
+const DISCORD_CONFIG = {
+  clientId: "1549240620026040351",
+  workerUrl: "https://blutadler-auth.xlwinnie19.workers.dev/"
+};
 
-  document.getElementById("select-aion").addEventListener("click", ()=>{
-    gameSelectScreen.style.display = "none";
-    loginScreen.style.display = "flex";
-  });
-  // "Guild Wars 3" is marked coming soon and has no portal yet — the button
-  // is disabled in HTML, this is just a defensive no-op.
-  const gwBtn = document.getElementById("select-gw");
-  if(gwBtn) gwBtn.addEventListener("click", (e)=> e.preventDefault());
+const gameSelectScreen = document.getElementById("game-select-screen");
+const loginScreen = document.getElementById("login-screen");
+const appScreen = document.getElementById("app-screen");
+const modal = document.getElementById("login-modal");
 
-  function goToApp(){
-    modal.style.display = "none";
+document.getElementById("select-aion").addEventListener("click", ()=>{
+  gameSelectScreen.style.display = "none";
+  loginScreen.style.display = "flex";
+});
+
+const gwBtn = document.getElementById("select-gw");
+if(gwBtn) gwBtn.addEventListener("click", (e)=> e.preventDefault());
+
+function goToApp(){
+  modal.style.display = "none";
+  gameSelectScreen.style.display = "none";
+  loginScreen.style.display = "none";
+  appScreen.style.display = "block";
+  state.view = "home";
+  render();
+  startMusic();
+}
+
+async function logInAsDiscordUser(discordUser){
+  await ensureLoaded();
+  let existing = state.members.find(m => m.discordId === discordUser.id);
+
+  if(existing){
+    existing.name = discordUser.username;
+    existing.avatar = discordUser.avatar;
+    await saveMembers();
+    state.currentUser = existing;
+    localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(discordUser));
+    goToApp();
+  } else {
+    state.pendingDiscordUser = discordUser;
+    const sel = document.getElementById("in-class");
+    sel.innerHTML = state.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
     gameSelectScreen.style.display = "none";
     loginScreen.style.display = "none";
-    appScreen.style.display = "block";
-    state.view = "home";
-    render();
-    startMusic();
+    modal.style.display = "flex";
   }
+}
 
-  // Finds the member for a logged-in Discord account, or prepares one for
-  // a brand-new user (still needs a Hauptklasse before they have a member
-  // record — see confirm-login below).
-  async function logInAsDiscordUser(discordUser){
-    await ensureLoaded();
-    let existing = state.members.find(m => m.discordId === discordUser.id);
-    if(existing){
-      existing.name = discordUser.username;
-      existing.avatar = discordUser.avatar;
-      await saveMembers();
-      state.currentUser = existing;
-      localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(discordUser));
-      goToApp();
-    } else {
-      // New member: ask for a Hauptklasse before creating their first character.
-      state.pendingDiscordUser = discordUser;
-      const sel = document.getElementById("in-class");
-      sel.innerHTML = state.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-      gameSelectScreen.style.display = "none";
-      loginScreen.style.display = "none";
-      modal.style.display = "flex";
-    }
-  }
+function handleOAuthReturn(){
+  const params = new URLSearchParams(window.location.search);
 
-  // Called once on page load: picks up ?discord_id=&discord_username=&discord_avatar=
-  // that the worker attaches when it redirects back after a successful login
-  // (or ?discord_error= if something went wrong on the worker's side).
-  function handleOAuthReturn(){
-    const params = new URLSearchParams(window.location.search);
-    const discordError = params.get("discord_error");
-    if(discordError){
-      window.history.replaceState({}, document.title, window.location.pathname);
-      gameSelectScreen.style.display = "none";
-      loginScreen.style.display = "flex";
-      alert("Discord-Login fehlgeschlagen: " + discordError);
-      return true;
-    }
-    const discordId = params.get("discord_id");
-    if(!discordId) return false;
-    const discordUser = {
-      id: discordId,
-      username: params.get("discord_username") || "Unbekannt",
-      avatar: params.get("discord_avatar") || ""
-    };
-    // Clean the OAuth params out of the URL so refreshing doesn't re-trigger this.
+  const discordError = params.get("discord_error");
+
+  if(discordError){
     window.history.replaceState({}, document.title, window.location.pathname);
-    logInAsDiscordUser(discordUser);
+    gameSelectScreen.style.display = "none";
+    loginScreen.style.display = "flex";
+    alert("Discord-Login fehlgeschlagen: " + discordError);
     return true;
   }
+
+  const discordId = params.get("discord_id");
+  if(!discordId) return false;
+
+  const discordAdmin = params.get("discord_admin") === "true";
+
+  const discordUser = {
+    id: discordId,
+    username: params.get("discord_username") || "Unbekannt",
+    avatar: params.get("discord_avatar") || "",
+    isAdmin: discordAdmin
+  };
+
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  logInAsDiscordUser(discordUser);
+  return true;
+}
 
   // Called once on page load: if we already completed Discord login in a
   // previous visit, skip straight back in without another OAuth round trip.
