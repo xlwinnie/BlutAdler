@@ -826,6 +826,40 @@
   }
   const DISCORD_SESSION_KEY = "blutadler_discord_session";
 
+  /* ---------------- Storage shim ----------------
+     window.storage only exists inside Claude's own artifact preview — it is
+     NOT a real browser API, so it's undefined on GitHub Pages (or anywhere
+     else). This replaces it with an equivalent that talks to the worker's
+     /storage/* endpoints (backed by Cloudflare KV), using the exact same
+     get/set/delete/list(key, shared) shape so nothing else in this file has
+     to change. */
+  (function installStorageShim(){
+    async function call(path, body){
+      if(!discordConfigured()){
+        throw new Error("Storage " + path.split("/")[2] + " failed: workerUrl not configured in DISCORD_CONFIG");
+      }
+      const base = DISCORD_CONFIG.workerUrl.replace(/\/$/, "");
+      const res = await fetch(base + path, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(body)
+      });
+      if(res.status === 404) throw new Error("Storage get failed: Key not found");
+      if(!res.ok){
+        let detail = "";
+        try{ detail = (await res.json()).error || ""; }catch(e){}
+        throw new Error(`Storage ${path.split("/")[2]} failed: ${detail || res.status}`);
+      }
+      return res.json();
+    }
+    window.storage = {
+      get: (key, shared) => call("/storage/get", {key, shared}),
+      set: (key, value, shared) => call("/storage/set", {key, value, shared}),
+      delete: (key, shared) => call("/storage/delete", {key, shared}),
+      list: (prefix, shared) => call("/storage/list", {prefix, shared})
+    };
+  })();
+
   /* ---------------- State ---------------- */
   let state = {
     currentUser: null,
