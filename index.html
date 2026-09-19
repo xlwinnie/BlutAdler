@@ -13,9 +13,9 @@
     --panel:rgba(255,255,255,0.035);
     --panel-2:rgba(20,8,18,0.55);
     --panel-border:rgba(255,255,255,0.08);
-    --red-light:#ff5a63;
-    --red-mid:#e4052d;
-    --red-dark:#8c0014;
+    --red-light:#ff8087;
+    --red-mid:#f22a4c;
+    --red-dark:#a8102c;
     --text:#f5f0f5;
     --text-dim:#9c93a3;
     --danger:#c0394b;
@@ -418,6 +418,7 @@
   .rank-Offizier{background:rgba(122,79,176,0.3); color:#dcc9ff; border:1px solid rgba(122,79,176,0.4);}
   .rank-Mitglied{background:rgba(255,255,255,0.08); color:var(--text-dim); border:1px solid rgba(255,255,255,0.12);}
   .rank-Rekrut{background:rgba(255,255,255,0.04); color:var(--text-dim); border:1px dashed rgba(255,255,255,0.15);}
+  .rank-Gast{background:rgba(255,255,255,0.02); color:var(--text-dim); border:1px dotted rgba(255,255,255,0.2); opacity:0.8;}
   .class-badge{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:4px 10px; border-radius:8px; font-size:12.5px; color:var(--text-dim);}
   .class-badge-btn{all:unset; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:4px 10px; border-radius:8px; font-size:12.5px; color:var(--text-dim); cursor:pointer;}
   .class-badge-btn:hover{background:rgba(255,255,255,0.12); color:var(--text);}
@@ -835,20 +836,35 @@
      to change. */
   (function installStorageShim(){
     async function call(path, body){
+      const action = path.split("/")[2];
       if(!discordConfigured()){
-        throw new Error("Storage " + path.split("/")[2] + " failed: workerUrl not configured in DISCORD_CONFIG");
+        throw new Error(`Storage ${action} failed: workerUrl not configured in DISCORD_CONFIG`);
       }
       const base = DISCORD_CONFIG.workerUrl.replace(/\/$/, "");
-      const res = await fetch(base + path, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(body)
-      });
+      let res;
+      try{
+        res = await fetch(base + path, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(body)
+        });
+      }catch(networkErr){
+        // fetch() itself throws on network failure OR a CORS rejection —
+        // both look identical to JS, so we can't tell them apart here.
+        throw new Error(`Storage ${action} failed: Worker nicht erreichbar (${base}). Prüfe workerUrl, ob der Worker deployed ist, und CORS (SITE_URL muss zu dieser Seite passen).`);
+      }
       if(res.status === 404) throw new Error("Storage get failed: Key not found");
+      const contentType = res.headers.get("content-type") || "";
+      if(!contentType.includes("application/json")){
+        // The worker responded, but not with our /storage/* JSON shape —
+        // almost always means the deployed worker still has the old code
+        // (before the /storage endpoints existed).
+        throw new Error(`Storage ${action} failed: Worker-Antwort ist kein JSON. Ist worker.js mit den /storage-Endpunkten wirklich deployed?`);
+      }
       if(!res.ok){
         let detail = "";
         try{ detail = (await res.json()).error || ""; }catch(e){}
-        throw new Error(`Storage ${path.split("/")[2]} failed: ${detail || res.status}`);
+        throw new Error(`Storage ${action} failed: ${detail || res.status}`);
       }
       return res.json();
     }
@@ -859,6 +875,25 @@
       list: (prefix, shared) => call("/storage/list", {prefix, shared})
     };
   })();
+
+  // Surfaces a single, visible warning the first time ANY save silently
+  // fails, instead of the previous behavior of swallowing every storage
+  // error — that's exactly what made "changes keep resetting" invisible.
+  let storageWarningShown = false;
+  function reportStorageFailure(context, err){
+    console.error(`[Speichern fehlgeschlagen: ${context}]`, err);
+    if(storageWarningShown) return;
+    storageWarningShown = true;
+    const banner = document.createElement("div");
+    banner.style.cssText = "position:fixed; top:0; left:0; right:0; z-index:9999; background:#7a0018; color:#fff; padding:12px 18px; font:600 13px/1.4 Inter,sans-serif; text-align:center;";
+    banner.textContent = `⚠ Speichern schlägt fehl (${context}): ${err && err.message ? err.message : err}. Änderungen gehen beim Neuladen verloren.`;
+    const closeBtn = document.createElement("span");
+    closeBtn.textContent = " ✕";
+    closeBtn.style.cssText = "cursor:pointer; margin-left:10px; opacity:0.8;";
+    closeBtn.onclick = () => banner.remove();
+    banner.appendChild(closeBtn);
+    document.body.prepend(banner);
+  }
 
   /* ---------------- State ---------------- */
   let state = {
@@ -876,12 +911,11 @@
     activeCharId: null,
     openSlotEditor: null,
     music: null,
-    musicStarted: false,
-    pendingDiscordUser: null
+    musicStarted: false
   };
 
-  const RANK_LABEL = {Leader:"Leader", CoLeader:"Co-Leader", Offizier:"Offizier", Mitglied:"Mitglied", Rekrut:"Rekrut"};
-  const RANK_ORDER = ["Leader","CoLeader","Offizier","Mitglied","Rekrut"];
+  const RANK_LABEL = {Leader:"Leader", CoLeader:"Co-Leader", Offizier:"Offizier", Mitglied:"Mitglied", Rekrut:"Rekrut", Gast:"Gast"};
+  const RANK_ORDER = ["Leader","CoLeader","Offizier","Mitglied","Rekrut","Gast"];
   const ROLLE_OPTIONS = ["Tank","Heiler","DPS","Support"];
 
   const EVENT_TYPES = {
@@ -1215,23 +1249,26 @@
 
 
   /* ---------------- Storage ---------------- */
+  function isNotFoundError(e){
+    return e && /key not found/i.test(e.message || "");
+  }
   async function loadAll(){
     try{
       const m = await window.storage.get("members", true);
       state.members = m ? JSON.parse(m.value) : null;
-    }catch(e){ state.members = null; }
+    }catch(e){ state.members = null; if(!isNotFoundError(e)) reportStorageFailure("Mitglieder laden", e); }
     try{
       const c = await window.storage.get("classes", true);
       state.classes = c ? JSON.parse(c.value) : null;
-    }catch(e){ state.classes = null; }
+    }catch(e){ state.classes = null; if(!isNotFoundError(e)) reportStorageFailure("Klassen laden", e); }
     try{
       const ev = await window.storage.get("events", true);
       state.events = ev ? JSON.parse(ev.value) : null;
-    }catch(e){ state.events = null; }
+    }catch(e){ state.events = null; if(!isNotFoundError(e)) reportStorageFailure("Kalender laden", e); }
     try{
       const t = await window.storage.get("tickets", true);
       state.tickets = t ? JSON.parse(t.value) : null;
-    }catch(e){ state.tickets = null; }
+    }catch(e){ state.tickets = null; if(!isNotFoundError(e)) reportStorageFailure("Tickets laden", e); }
     try{
       let mu = null;
       try{ mu = await window.storage.get("music", true); }
@@ -1373,12 +1410,12 @@
     state.loaded = true;
   }
 
-  async function saveMembers(){ try{ await window.storage.set("members", JSON.stringify(state.members), true); }catch(e){} }
-  async function saveClasses(){ try{ await window.storage.set("classes", JSON.stringify(state.classes), true); }catch(e){} }
-  async function saveEvents(){ try{ await window.storage.set("events", JSON.stringify(state.events), true); }catch(e){} }
-  async function saveTickets(){ try{ await window.storage.set("tickets", JSON.stringify(state.tickets), true); }catch(e){} }
-  async function saveNews(){ try{ await window.storage.set("news", JSON.stringify(state.news), true); }catch(e){} }
-  async function saveStats(){ try{ await window.storage.set("stats", JSON.stringify(state.stats), true); }catch(e){} }
+  async function saveMembers(){ try{ await window.storage.set("members", JSON.stringify(state.members), true); }catch(e){ reportStorageFailure("Mitglieder", e); } }
+  async function saveClasses(){ try{ await window.storage.set("classes", JSON.stringify(state.classes), true); }catch(e){ reportStorageFailure("Klassen", e); } }
+  async function saveEvents(){ try{ await window.storage.set("events", JSON.stringify(state.events), true); }catch(e){ reportStorageFailure("Kalender", e); } }
+  async function saveTickets(){ try{ await window.storage.set("tickets", JSON.stringify(state.tickets), true); }catch(e){ reportStorageFailure("Tickets", e); } }
+  async function saveNews(){ try{ await window.storage.set("news", JSON.stringify(state.news), true); }catch(e){ reportStorageFailure("Neuigkeiten", e); } }
+  async function saveStats(){ try{ await window.storage.set("stats", JSON.stringify(state.stats), true); }catch(e){ reportStorageFailure("Statistiken", e); } }
 
   /* ---------------- Login flow ---------------- */
   const gameSelectScreen = document.getElementById("game-select-screen");
@@ -1407,7 +1444,8 @@
 
   // Finds the member for a logged-in Discord account, or prepares one for
   // a brand-new user (still needs a Hauptklasse before they have a member
-  // record — see confirm-login below).
+  // record — Klasse/Rolle/Ingame-Name are set later via their accepted
+  // application ticket, see attachTicketEvents' accept-ticket handler).
   async function logInAsDiscordUser(discordUser){
     await ensureLoaded();
     let existing = state.members.find(m => m.discordId === discordUser.id);
@@ -1422,13 +1460,22 @@
       localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(discordUser));
       goToApp();
     } else {
-      // New member: ask for a Hauptklasse before creating their first character.
-      state.pendingDiscordUser = discordUser;
-      const sel = document.getElementById("in-class");
-      sel.innerHTML = state.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
-      gameSelectScreen.style.display = "none";
-      loginScreen.style.display = "none";
-      modal.style.display = "flex";
+      // New member: no class picker, no modal — straight into the site as
+      // a Gast. They only become Rekrut once an admin accepts their
+      // application ticket (which is where Klasse/Rolle/Ingame-Name get set).
+      const member = {
+        id: uid(),
+        name: discordUser.username,
+        discordId: discordUser.id,
+        avatar: discordUser.avatar,
+        rank: discordUser.isAdmin ? "Leader" : "Gast",
+        characters: []
+      };
+      state.members.push(member);
+      await saveMembers();
+      state.currentUser = member;
+      localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(discordUser));
+      goToApp();
     }
   }
 
@@ -1487,27 +1534,6 @@
   if(openLogin3) openLogin3.addEventListener("click", (e)=>{ e.preventDefault(); document.getElementById("open-discord-login").click(); });
   const backLink = document.getElementById("back-to-dashboard-link");
   if(backLink) backLink.addEventListener("click", (e)=> e.preventDefault());
-
-  document.getElementById("confirm-login").addEventListener("click", async ()=>{
-    const klasse = document.getElementById("in-class").value;
-    const discordUser = state.pendingDiscordUser;
-    if(!discordUser) return;
-
-    const member = {
-      id: uid(),
-      name: discordUser.username,
-      discordId: discordUser.id,
-      avatar: discordUser.avatar,
-      rank: discordUser.isAdmin ? "Leader" : "Rekrut",
-      characters: [{id:uid(), name:discordUser.username, klasse, rolle:"DPS", equipment:{}}]
-    };
-    state.members.push(member);
-    await saveMembers();
-    state.currentUser = member;
-    state.pendingDiscordUser = null;
-    localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(discordUser));
-    goToApp();
-  });
 
   document.getElementById("logout-btn").addEventListener("click", ()=>{
     state.currentUser = null;
@@ -1841,14 +1867,18 @@
   function renderTicket(){
     const user = state.currentUser;
     const admin = isAdmin(user);
-    const visible = admin ? state.tickets : state.tickets.filter(t=>t.author===user.name);
+    const visible = admin ? state.tickets : state.tickets.filter(t=> t.authorId ? t.authorId===user.id : t.author===user.name);
 
-    const items = visible.map((t,i) => `
+    const items = visible.map((t,i) => {
+      const authorMember = state.members.find(m=> t.authorId ? m.id===t.authorId : m.name===t.author);
+      const canAccept = admin && !t.accepted && authorMember && authorMember.rank === "Gast" && t.ingameName && t.klasse && t.rolle;
+      return `
       <div class="ticket-row ${i>0?'with-divider':''}">
         <div class="ticket-id">#${t.num || "----"}</div>
         <div class="ticket-main">
           <h4>${escapeHtml(t.title)}</h4>
-          <div class="ticket-meta">von ${escapeHtml(t.author)}</div>
+          <div class="ticket-meta">von ${escapeHtml(t.author)}${t.accepted ? ' · <span style="color:var(--red-light);">✓ Angenommen</span>' : ''}</div>
+          ${(t.ingameName || t.klasse || t.rolle) ? `<div class="ticket-meta">Ingame-Name: ${escapeHtml(t.ingameName||'—')} · Klasse: ${escapeHtml(t.klasse||'—')} · Rolle: ${escapeHtml(t.rolle||'—')}</div>` : ""}
           <div class="ticket-desc">${escapeHtml(t.desc)}</div>
           ${t.replies.map(r=>`<div class="reply"><div class="who">${escapeHtml(r.by)}</div>${escapeHtml(r.text)}</div>`).join("")}
           ${admin ? `
@@ -1860,12 +1890,15 @@
               <button class="btn btn-ghost btn-small" data-action="toggle-status" data-id="${t.id}">
                 Status: ${nextStatus(t.status)}
               </button>
+              ${canAccept ? `<button class="btn btn-primary btn-small" data-action="accept-ticket" data-id="${t.id}">Annehmen (→ Rekrut)</button>` : ""}
             </div>
           ` : ""}
         </div>
         <span class="status status-${statusClass(t.status)}">${t.status.toUpperCase()}</span>
       </div>
-    `).join("");
+    `;}).join("");
+
+    const isGast = user.rank === "Gast";
 
     return `
       <div class="page-title">Tickets</div>
@@ -1877,8 +1910,26 @@
       </div>
 
       <div class="panel">
-        <h3>Neues Ticket erstellen</h3>
+        <h3>${isGast ? "Bewerbung einreichen" : "Neues Ticket erstellen"}</h3>
+        ${isGast ? `<div class="page-sub" style="margin-bottom:14px;">Als Gast wirst du erst zum Rekrut, sobald ein Admin deine Bewerbung annimmt.</div>` : ""}
         <div class="field"><label for="tk-title">Titel</label><input id="tk-title" type="text" placeholder="Kurze Zusammenfassung"></div>
+        <div class="field"><label for="tk-ingame">Ingame-Name</label><input id="tk-ingame" type="text" placeholder="Dein Charaktername in Aion 2"></div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div class="field" style="flex:1; min-width:160px;">
+            <label for="tk-klasse">Klasse</label>
+            <select id="tk-klasse">
+              <option value="" disabled selected>Klasse wählen…</option>
+              ${state.classes.map(k=>`<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="field" style="flex:1; min-width:160px;">
+            <label for="tk-rolle">Rolle</label>
+            <select id="tk-rolle">
+              <option value="" disabled selected>Rolle wählen…</option>
+              ${ROLLE_OPTIONS.map(r=>`<option value="${r}">${r}</option>`).join("")}
+            </select>
+          </div>
+        </div>
         <div class="field"><label for="tk-desc">Beschreibung</label><textarea id="tk-desc" placeholder="Was ist dein Anliegen?"></textarea></div>
         <button class="btn btn-primary" id="add-ticket-btn">Ticket absenden</button>
       </div>
@@ -2665,9 +2716,21 @@
       addBtn.addEventListener("click", async ()=>{
         const title = document.getElementById("tk-title").value.trim();
         const desc = document.getElementById("tk-desc").value.trim();
+        const ingameName = document.getElementById("tk-ingame").value.trim();
+        const klasse = document.getElementById("tk-klasse").value;
+        const rolle = document.getElementById("tk-rolle").value;
         if(!title || !desc){ alert("Bitte Titel und Beschreibung angeben."); return; }
+        if(state.currentUser.rank === "Gast" && (!ingameName || !klasse || !rolle)){
+          alert("Bitte Ingame-Name, Klasse und Rolle angeben, damit deine Bewerbung angenommen werden kann.");
+          return;
+        }
         const maxNum = state.tickets.reduce((m,t)=>Math.max(m, t.num||0), 1000);
-        state.tickets.unshift({id:uid(), num:maxNum+1, title, desc, author:state.currentUser.name, status:"Offen", replies:[]});
+        state.tickets.unshift({
+          id:uid(), num:maxNum+1, title, desc,
+          author:state.currentUser.name, authorId:state.currentUser.id,
+          ingameName, klasse, rolle,
+          status:"Offen", accepted:false, replies:[]
+        });
         await saveTickets();
         render();
       });
@@ -2687,6 +2750,22 @@
       btn.addEventListener("click", async ()=>{
         const t = state.tickets.find(x=>x.id===btn.dataset.id);
         t.status = nextStatus(t.status);
+        await saveTickets();
+        render();
+      });
+    });
+    document.querySelectorAll('[data-action="accept-ticket"]').forEach(btn=>{
+      btn.addEventListener("click", async ()=>{
+        const t = state.tickets.find(x=>x.id===btn.dataset.id);
+        if(!t) return;
+        const member = state.members.find(m=> t.authorId ? m.id===t.authorId : m.name===t.author);
+        if(!member){ alert("Mitglied nicht gefunden."); return; }
+        member.rank = "Rekrut";
+        member.characters = member.characters || [];
+        member.characters.push({id:uid(), name:t.ingameName, klasse:t.klasse, rolle:t.rolle, equipment:{}});
+        t.accepted = true;
+        t.status = "Geschlossen";
+        await saveMembers();
         await saveTickets();
         render();
       });
