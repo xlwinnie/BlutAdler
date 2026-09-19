@@ -1425,29 +1425,6 @@
     return true;
   }
 
-
-
- 
- function logInAsDiscordUser(discordUser){
-  console.log("Discord Benutzer:", discordUser);
-  console.log("Admin:", discordUser.isAdmin);
-
-  // Discord-Login speichern
-  localStorage.setItem(
-    DISCORD_SESSION_KEY,
-    JSON.stringify(discordUser)
-  );
-
-  // Hier können wir später den Admin-Bereich anzeigen
-  if(discordUser.isAdmin){
-    console.log("BlutAdler Admin erkannt!");
-  }
-
-  // Deine bestehende Login-Oberfläche weiter benutzen
-  gameSelectScreen.style.display = "flex";
-  loginScreen.style.display = "none";
-}
-
   
   // Called once on page load: if we already completed Discord login in a
   // previous visit, skip straight back in without another OAuth round trip.
