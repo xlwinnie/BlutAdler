@@ -806,8 +806,8 @@
      CLIENT SECRET must never go here; it only ever lives in the worker's
      environment variables. */
   const DISCORD_CONFIG = {
-    clientId: "1549240620026040351",
-    workerUrl: "https://blutadler-auth.xlwinnie19.workers.dev/",
+    clientId: "YOUR_DISCORD_CLIENT_ID",           // from the Discord Developer Portal
+    workerUrl: "https://YOUR-WORKER.workers.dev", // your deployed worker's base URL (no trailing slash)
     scope: "identify"
   };
   function discordConfigured(){
@@ -1410,14 +1410,10 @@
     }
     const discordId = params.get("discord_id");
     if(!discordId) return false;
-
-    const discordAdmin = params.get("discord_admin") === "true";
-    
     const discordUser = {
       id: discordId,
       username: params.get("discord_username") || "Unbekannt",
       avatar: params.get("discord_avatar") || ""
-      isAdmin: discordAdmin
     };
     // Clean the OAuth params out of the URL so refreshing doesn't re-trigger this.
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -1425,7 +1421,6 @@
     return true;
   }
 
-  
   // Called once on page load: if we already completed Discord login in a
   // previous visit, skip straight back in without another OAuth round trip.
   function trySessionRestore(){
