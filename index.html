@@ -806,8 +806,8 @@
      CLIENT SECRET must never go here; it only ever lives in the worker's
      environment variables. */
   const DISCORD_CONFIG = {
-    clientId: "YOUR_DISCORD_CLIENT_ID",           // from the Discord Developer Portal
-    workerUrl: "https://YOUR-WORKER.workers.dev", // your deployed worker's base URL (no trailing slash)
+    clientId: "1549240620026040351",           // from the Discord Developer Portal
+    workerUrl: "https://blutadler-auth.xlwinnie19.workers.dev", // your deployed worker's base URL (no trailing slash)
     scope: "identify"
   };
   function discordConfigured(){
@@ -1380,6 +1380,9 @@
     if(existing){
       existing.name = discordUser.username;
       existing.avatar = discordUser.avatar;
+      // Self-healing: the designated admin (checked server-side in the
+      // worker) always gets Leader back, even if it was changed by mistake.
+      if(discordUser.isAdmin) existing.rank = "Leader";
       await saveMembers();
       state.currentUser = existing;
       localStorage.setItem(DISCORD_SESSION_KEY, JSON.stringify(discordUser));
@@ -1396,7 +1399,8 @@
   }
 
   // Called once on page load: picks up ?discord_id=&discord_username=&discord_avatar=
-  // that the worker attaches when it redirects back after a successful login
+  // (and ?discord_admin=true for the designated admin) that the worker
+  // attaches when it redirects back after a successful login
   // (or ?discord_error= if something went wrong on the worker's side).
   function handleOAuthReturn(){
     const params = new URLSearchParams(window.location.search);
@@ -1410,10 +1414,12 @@
     }
     const discordId = params.get("discord_id");
     if(!discordId) return false;
+    const discordAdmin = params.get("discord_admin") === "true";
     const discordUser = {
       id: discordId,
       username: params.get("discord_username") || "Unbekannt",
-      avatar: params.get("discord_avatar") || ""
+      avatar: params.get("discord_avatar") || "",
+      isAdmin: discordAdmin
     };
     // Clean the OAuth params out of the URL so refreshing doesn't re-trigger this.
     window.history.replaceState({}, document.title, window.location.pathname);
@@ -1458,7 +1464,7 @@
       name: discordUser.username,
       discordId: discordUser.id,
       avatar: discordUser.avatar,
-      rank: "Rekrut",
+      rank: discordUser.isAdmin ? "Leader" : "Rekrut",
       characters: [{id:uid(), name:discordUser.username, klasse, rolle:"DPS", equipment:{}}]
     };
     state.members.push(member);
